@@ -1,7 +1,0 @@
-# Conservar los documentos sin convertir sus saltos de línea
-*.pdf binary
-*.docx binary
-*.txt -text
-*.md text eol=lf
-.gitignore text eol=lf
-.gitattributes text eol=lf
