@@ -1,0 +1,49 @@
+Actúa como un Director de Proyectos de Ingeniería de Software e Investigación en Inteligencia Artificial. Basándote estrictamente en el documento de la práctica adjunto sobre el Problema del Ciclo Hamiltoniano (FHCP Challenge) y en las directrices de arquitectura que te doy a continuación, redacta un **"Documento Maestro de Organización, Arquitectura y Asignación de Roles"** para un equipo de 5 integrantes. 
+
+El documento debe tener un tono profesional, estructurado, directo y listo para compartirse con el equipo y mostrarse al profesor como evidencia de planificación. Desarrolla a detalle las siguientes 6 secciones:
+
+### 1. Entorno de Trabajo y Herramientas Oficiales (Stack Tecnológico)
+Establece que el equipo trabajará bajo las siguientes plataformas y estándares:
+* **Control de versiones y código:** GitHub. Se trabajará con una rama `main` protegida (solo código probado), una rama `develop` para integración, y ramas individuales por algoritmo (`feature/ga`, `feature/sa`, `feature/aco`, `feature/abc`, `feature/de-pso`). Ningún código entra a `develop` sin pasar el validador de ciclos hamiltonianos.
+* **Lenguaje y librerías permitidas:** Python 3.10+. Uso de `NumPy` para operaciones matriciales rápidas y representación de grafos, `matplotlib`/`seaborn` y `pandas` para la generación de tablas y gráficas comparativas. (Prohibido usar librerías que ya traigan las metaheurísticas pre-programadas; los algoritmos deben programarse desde cero).
+* **Redacción del Informe Técnico:** Overleaf (LaTeX) colaborativo, estructurado con secciones modulares (`.tex` individuales por sección) y gestión de referencias bibliográficas en formato IEEE/APA mediante archivo `.bib` (Zotero).
+* **Comunicación y seguimiento:** Tablero Kanban (GitHub Projects) dividido en las 4 fases del PDF (Investigación, Core/Dataset, Implementación, Benchmarking/Reporte).
+
+### 2. Arquitectura del Repositorio y "Contrato de Interfaz" (Lo que nadie puede romper)
+Diseña y explica el árbol de directorios del repositorio en GitHub (`src/`, `data/fhcp/`, `results/`, `docs/`) y define el **Contrato de Código**:
+* Todos los algoritmos deben heredar o seguir una interfaz única (`BaseMetaheuristic`).
+* **Entrada estándar:** Matriz/Lista de adyacencia del grafo FHCP, `max_evals` (límite de evaluaciones de fitness), `timeout_sec` (tiempo máximo por corrida) y `seed` (semilla aleatoria para reproducibilidad científica).
+* **Salida estándar:** Diccionario u objeto que retorne obligatoriamente: el arreglo de vértices de la solución propuesta (de longitud exacta $n$ sin nodos repetidos), booleano de éxito (¿cerró el ciclo hamiltoniano?), fitness máximo alcanzado (número de aristas reales válidas), número de iteraciones, tiempo computacional en segundos e historial de convergencia.
+
+### 3. Asignación Equilibrada de Roles para los 5 Integrantes
+Detalla en una tabla y luego desglosa en listas de entregables qué hará exactamente cada integrante en las 4 fases (1. Investigación de Aula Invertida, 2. Infraestructura/Dataset, 3. Programación de Metaheurísticas, 4. Redacción en Overleaf), manteniendo este equilibrio de carga:
+* **Integrante 1 (Arquitecto Core + Recocido Simulado):** 
+  - *Infraestructura:* Programar el parser de archivos `.hcp` del FHCP Challenge Set, la estructura del grafo en memoria, la Función de Fitness unificada (conteo de aristas válidas de la permutación + penalización) y el Validador Estricto de Ciclos Legales (garantizar longitud $n$, sin repetidos y aristas existentes).
+  - *Algoritmo:* Implementar Simulated Annealing (SA) con operadores de intercambio (*swaps* / *2-opt*) y esquema de enfriamiento lento.
+  - *Reporte:* Marco teórico de Teoría de Grafos, definición formal del Ciclo Hamiltoniano, mapeo de representación del problema, función de costo y sección de SA.
+* **Integrante 2 (Líder de Benchmarking y Métricas + Algoritmo Genético):** 
+  - *Infraestructura:* Construir el motor de pruebas automatizado (`benchmark_runner.py`) que ejecute los 6 algoritmos, calcule el costo computacional, iteraciones, tasa de éxito, y el mapeo de Precisión, Recall y F1-Score, exportando tablas CSV y gráficas de convergencia.
+  - *Algoritmo:* Implementar el Algoritmo Genético (GA) como base de control, utilizando cruza específica para permutaciones (ej. Order Crossover - OX o PMX) para jamás generar cromosomas ilegales.
+  - *Reporte:* Marco teórico del Módulo Evolutivo, métricas de evaluación en IA, estándares del FHCP Challenge, diseño del GA y compilación de las Tablas y Gráficos Comparativos.
+* **Integrante 3 (Especialista en Enjambres de Grafos - ACO):** 
+  - *Algoritmo:* Implementar Ant Colony Optimization (ACO). Diseñar la matriz de feromonas virtuales, la regla de transición probabilística, la evaporación y un mecanismo de desbloqueo o penalización cuando una hormiga llegue a un nodo sin salida en los grafos dispersos del FHCP.
+  - *Apoyo técnico:* Diseñar una heurística de visibilidad local basada en los grados de los vértices para detectar "cuellos de botella" (puentes o nodos de grado 2).
+  - *Reporte:* Fundamentación teórica de ACO y análisis profundo de cómo las feromonas refuerzan rutas en nodos difíciles del FHCP.
+* **Integrante 4 (Especialista en Búsqueda Local Distribuida - Bee Colony):** 
+  - *Algoritmo:* Implementar Artificial Bee Colony (ABC) adaptado a permutaciones discretas (fases de abejas empleadas, observadoras y exploradoras para abandonar fuentes estancadas en mínimos locales).
+  - *Apoyo técnico:* Programar operadores de vecindad combinatoria avanzada (inversión de segmentos *2-opt* e inserción) en un módulo `operators.py` para que también puedan usarlos SA, GA y ABC.
+  - *Reporte:* Fundamentación teórica de Bee Colony y redacción de la sección de **Benchmarking contra el FHCP Challenge** (comparar resultados del equipo contra el estado del arte del portal oficial).
+* **Integrante 5 (Especialista en Adaptación Continua-Discreta - DE y PSO):** 
+  - *Infraestructura:* Programar el codificador/decodificador continuo-a-discreto mediante la técnica de *Random Keys* (ordenamiento de índices `argsort` sobre vectores reales) para garantizar que cualquier vector continuo se traduzca en una permutación 100% legal sin vértices repetidos.
+  - *Algoritmos:* Implementar Evolución Diferencial (DE) y Particle Swarm Optimization (PSO) operando sobre dicho decodificador y aplicando búsqueda local ligera.
+  - *Reporte:* Fundamentación teórica de DE y PSO, explicación matemática de la discretización de espacios continuos, y redacción de las Conclusiones Generales sobre qué metaheurística se adaptó mejor a las trampas de los grafos difíciles.
+
+### 4. Protocolo Experimental y Reglas de Rigor Científico (Puntos Críticos)
+Añade una sección obligatoria de cómo se realizarán las pruebas para que el trabajo sea metodológicamente impecable:
+* **Selección escalonada del Dataset FHCP:** Definir una batería de pruebas dividida en 3 niveles de dificultad a partir del FHCP Challenge Set (Instancias Pequeñas, Medianas y Grandes/Difíciles) para no colapsar el tiempo de cómputo pero demostrar escalabilidad.
+* **Estandarización de Hardware:** Explicar por qué la corrida definitiva del benchmark de los 6 algoritmos se ejecutará en una sola máquina designada (para que la métrica de tiempo en segundos y costo computacional sea 100% justa y comparable).
+* **Ejecuciones Estadísticas (Semillas):** Como son algoritmos estocásticos, establecer un mínimo de $N$ ejecuciones independientes (ej. 10 a 30 corridas con distintas semillas) por cada grafo para reportar tasa de éxito, media y desviación estándar.
+* **Aterrizaje matemático de Precisión, Recall y F1-Score:** Explicar claramente cómo se calcularán estas tres métricas exigidas en la Fase 1 tanto a nivel de recuperación de aristas válidas del ciclo ($n$ aristas) como a nivel de detección exitosa del ciclo hamiltoniano en las instancias evaluadas.
+
+### 5. Flujo de Trabajo, Dependencias y Validación Cruzada
+Genera un cronograma paso a paso indicando qué tareas bloquean a otras (ej. el parser y la función de fitness del Integrante 1 deben estar listos primero; cómo usar un grafo *dummy* de 10 nodos mientras tanto) y cómo se hará el *Code Review* cruzado para verificar que ningún algoritmo haga trampa ni viole las restricciones de los ciclos hamiltonianos.
