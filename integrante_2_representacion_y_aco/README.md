@@ -1,4 +1,4 @@
-# Integrante 2 — Representación de soluciones y colonia de hormigas
+# Osvaldo Fabian Ramiro Balboa — Representación de soluciones y colonia de hormigas
 
 Tu trabajo tiene dos partes: investigar un tema general de la práctica y estudiar un algoritmo. Primero comprende el tema general y después relaciónalo con el algoritmo. Al finalizar, comparte tu explicación con el equipo. Todos deben comprender los fundamentos, aunque cada persona coordine un tema distinto.
 
