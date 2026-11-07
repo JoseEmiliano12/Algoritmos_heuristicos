@@ -1,0 +1,258 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{lmodern}
+\usepackage{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\geometry{margin=2.35cm}
+\definecolor{azul}{HTML}{17365D}
+\definecolor{cian}{HTML}{0A6C82}
+\definecolor{gris}{HTML}{4B5563}
+\hypersetup{colorlinks=true,linkcolor=azul,urlcolor=cian,pdftitle={Heurísticas y colonia de abejas para el ciclo hamiltoniano},pdfauthor={Investigación didáctica}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{gris}Heurísticas y colonia de abejas}
+\fancyhead[R]{\small\color{gris}Investigación}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\setlength{\headheight}{14pt}
+\setlist{itemsep=2pt,topsep=4pt}
+\newcommand{\src}[1]{\textsuperscript{\textcolor{cian}{[#1]}}}
+\newcommand{\nota}[1]{\par\smallskip\noindent\fcolorbox{cian}{cian!6}{\parbox{0.94\linewidth}{\small #1}}\par\smallskip}
+
+\begin{document}
+\begin{center}
+{\Large\bfseries\color{azul}Heurísticas y colonia de abejas\\[3pt] para el ciclo hamiltoniano}\par
+\vspace{5pt}
+{\large Módulo evolutivo, algoritmo genético y Artificial Bee Colony}\par
+\vspace{7pt}
+{\small Investigación del tema asignado a Integrante 3 \quad|\quad 2 de noviembre de 2026}
+\end{center}
+\vspace{7pt}
+
+\nota{\textbf{Alcance.} Este documento responde al enunciado proporcionado. No se adjuntó el README ni la práctica original; por ello, los parámetros y la adaptación al ciclo hamiltoniano se presentan como \emph{propuestas didácticas}, no como requisitos confirmados ni como resultados experimentales del FHCP.}
+
+\section{El problema que se quiere resolver}
+Un \textbf{grafo} $G=(V,E)$ reúne vértices $V$ y aristas $E$ que indican qué pares están conectados. Un \textbf{ciclo hamiltoniano} recorre cada vértice exactamente una vez y vuelve al inicial por una arista existente. Si hay $n$ vértices, una ruta puede escribirse $R=(v_1,v_2,\ldots,v_n,v_1)$: el primer vértice aparece de nuevo al final solamente para cerrar el ciclo. La pregunta de decisión es si existe alguna ruta con esas propiedades.\src{1} No basta con escribir una permutación de vértices: deben existir todas sus aristas consecutivas, incluida $(v_n,v_1)$.
+
+El problema del viajante (TSP) agrega costos a las aristas y busca un ciclo de costo mínimo; el problema hamiltoniano planteado aquí busca \emph{existencia}. Esta distinción cambia la evaluación: una ruta barata no sirve si usa aristas ausentes. El conjunto FHCP es una colección de instancias difíciles del problema hamiltoniano; el ejemplo pequeño de la sección~\ref{sec:ejemplo} fue inventado para explicar el método y no pertenece a ese conjunto.\src{2}
+
+Hay que separar también \textbf{camino hamiltoniano} y \textbf{ciclo hamiltoniano}. Un camino visita todos los vértices sin repetirlos, pero no necesita regresar al punto de partida. Un ciclo exige además una última arista que conecte el final con el inicio. Esa condición de cierre es fácil de olvidar cuando la ruta se guarda como una lista sin repetir el primer vértice al final. Para comprobarla, la implementación debe tratar la lista como circular.
+
+\section{Módulo evolutivo y heurísticas}
+\subsection{Qué es una heurística}
+Una \textbf{heurística} es una regla práctica que usa información disponible para orientar una búsqueda hacia opciones prometedoras. Por ejemplo, al extender una ruta parcial puede preferirse un vecino que deje más posibilidades de continuar. Eso ahorra exploración en muchos casos, pero una preferencia no demuestra que exista una solución ni que se haya encontrado la mejor. En búsqueda informada, una función heurística suele estimar el costo o la distancia restante a la meta; en búsqueda de poblaciones también se usan puntuaciones para favorecer candidatos.\src{3}
+
+Conviene distinguir tres niveles: \textbf{representación} (cómo se codifica una posible ruta), \textbf{evaluación} (qué tan prometedora parece) y \textbf{comprobación} (si satisface exactamente la definición de ciclo). Una heurística guía el trabajo; el comprobador da el veredicto sobre una ruta concreta.
+
+\textbf{Ejemplo de orientación.} Si una ruta parcial termina en $C$ y puede pasar a $D$ o a $E$, una regla podría preferir el vértice que conserve más conexiones hacia los aún no visitados. Esa regla usa la estructura del grafo para decidir qué probar primero. Puede equivocarse: elegir una continuación que parece buena ahora puede impedir el regreso al inicio después. Por ello, una heurística se evalúa por su utilidad práctica para organizar intentos, no por su capacidad de certificar una respuesta.
+
+En métodos de población aparece otra distinción: \textbf{exploración} significa probar regiones nuevas del espacio de rutas, mientras que \textbf{explotación} significa mejorar rutas ya prometedoras. Si solo se explota, varias soluciones pueden quedarse cerca del mismo resultado mediocre; si solo se explora, no se aprovecha lo aprendido. La colonia artificial de abejas combina ambos comportamientos mediante observadoras que se concentran en fuentes buenas y exploradoras que renuevan fuentes estancadas.\src{7,8}
+
+\subsection{Cómo representar y modificar una posible solución}
+Para un grafo con vértices $A,B,C,D,E,F$, puede guardarse la permutación $(A,B,C,D,E,F)$ e interpretar que después de $F$ se intenta regresar a $A$. Fijar $A$ al principio evita copias debidas a rotaciones de la misma ruta. En grafos no dirigidos, una ruta y su reverso describen el mismo ciclo; eliminar esa duplicación es opcional.
+
+Una \textbf{solución candidata} puede generarse con una permutación aleatoria. Se modifica mediante un \emph{intercambio} de dos posiciones, la inversión de un tramo o la inserción de un vértice en otra posición. Estas operaciones conservan la propiedad de visitar una vez cada vértice, pero pueden crear o destruir aristas válidas. Por eso se vuelve a evaluar y comprobar cada cambio. Para un recorrido parcial, la información útil puede incluir aristas disponibles, vértices sin visitar y posibilidades de cerrar el ciclo. Para una permutación completa, puede incluir el número y la localización de enlaces ausentes.
+
+Una permutación de $n$ vértices ofrece un espacio de búsqueda grande: fijar el inicio deja $(n-1)!$ órdenes posibles. En un grafo no dirigido, leer un ciclo en sentido inverso representa el mismo conjunto de aristas, por lo que incluso entre esos órdenes hay duplicados. La codificación debe preservar una regla sencilla: cada vértice aparece exactamente una vez en la lista y el regreso se agrega al interpretarla. Así, la búsqueda se concentra en mejorar las conexiones en lugar de corregir vértices repetidos.
+
+\begin{center}
+\small
+\begin{tabular}{p{2.5cm}p{10.0cm}}
+\toprule
+\textbf{Cambio} & \textbf{Ejemplo y efecto sobre $(A,B,C,D,E,F)$}\\
+\midrule
+Intercambio & Cambiar $C$ y $E$ produce $(A,B,E,D,C,F)$. Se revisan las conexiones alrededor de las dos posiciones.\\
+Inversión & Invertir el tramo $C,D,E$ produce $(A,B,E,D,C,F)$. Se revisan los extremos y la orientación interna del tramo.\\
+Inserción & Mover $E$ antes de $C$ produce $(A,B,E,C,D,F)$. Se revisan las conexiones de la posición original y de la nueva.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Los dos primeros cambios coinciden en este ejemplo corto, pero son operadores distintos en general: el intercambio afecta exactamente dos posiciones, mientras que la inversión puede alterar todo un tramo. En este trabajo el pseudocódigo elige solo \emph{intercambio} para que la adaptación de ABC sea inequívoca.
+
+\subsection{Función de evaluación, fitness y validez}
+Sea $R=(v_1,\ldots,v_n)$ una permutación y definamos $v_{n+1}=v_1$. Una evaluación simple \emph{propuesta para este documento} cuenta aristas inexistentes:
+\begin{equation}
+b(R)=\sum_{i=1}^{n}\mathbf{1}\bigl[(v_i,v_{i+1})\notin E\bigr],
+\qquad F(R)=\frac{1}{1+b(R)}.\label{eq:fitness}
+\end{equation}
+Aquí $b$ se minimiza; $F$ es el \textbf{fitness}, una calidad positiva que se maximiza. Si hay dos enlaces faltantes, $F=1/3$; si no falta ninguno, $F=1$. Esta puntuación hace comparables rutas incompletas y permite elegir probabilísticamente entre ellas. No es la única función posible y no implica distancias, pues el problema descrito no da pesos a las aristas.
+
+La \textbf{validez} se comprueba de forma explícita: (1) la ruta contiene exactamente los $n$ vértices distintos del grafo; (2) cada par consecutivo es una arista; y (3) también existe la arista del último al primero. Si la representación garantiza una permutación, $b(R)=0$ equivale a validez para un grafo simple no dirigido, pero conviene conservar un verificador independiente para detectar errores de representación o de implementación. Una ruta con $b=1$ es \emph{casi} válida, nunca una solución.
+
+La expresión $\mathbf{1}[P]$ vale $1$ cuando la proposición $P$ es verdadera y $0$ en caso contrario. Por eso $b(R)$ revisa exactamente $n$ conexiones: las $n-1$ parejas consecutivas de la lista y la conexión de regreso. El valor $F(R)$ siempre es positivo y decrece al aumentar los enlaces ausentes. Se eligió esta transformación porque la selección por ruleta necesita pesos no negativos y porque resulta fácil explicar por qué una fuente con menos fallos recibe más atención.\src{8}
+
+\textbf{Ejemplo mínimo de la diferencia.} Si una ruta contiene todos los vértices y sus primeras $n-1$ conexiones existen, pero falta la última arista hacia el inicio, entonces $b=1$ y $F=1/2$. El fitness expresa que la ruta está cerca del objetivo según \emph{esta} medida; el verificador responde ``inválida''. Dos rutas distintas con $b=1$ reciben igual nota aunque una sea más fácil de reparar. Esta igualdad produce una \textbf{meseta} y explica por qué el operador de vecindad y las exploradoras importan tanto como la fórmula de fitness.
+
+\subsection{Algoritmo genético (GA) como referencia}
+Un \textbf{algoritmo genético} mantiene una \textbf{población} de candidatos, llamados individuos. Cada individuo codifica una ruta. En cada \textbf{generación} se evalúan los individuos, se \textbf{seleccionan} padres favoreciendo los mejores, se hace \textbf{cruce} para combinar información de dos padres y se aplica \textbf{mutación} para introducir variaciones. Después se forma una nueva población y se repite. Esta es la estructura general que la práctica menciona como referencia y que el equipo tendrá que conocer antes de programarla.\src{4,5}
+
+En rutas representadas como permutaciones, un cruce ingenuo puede repetir vértices y omitir otros. Por ejemplo, los padres $(B,C,D,E,F)$ y $(C,D,B,E,F)$, cortados después de dos posiciones y pegados sin cuidado, pueden producir $(B,C,B,E,F)$: $B$ se repite y falta $D$. Debe usarse un cruce que preserve permutaciones (por ejemplo, uno basado en orden o PMX), o reparar el descendiente.\src{6} Una mutación por intercambio también preserva la permutación. La selección puede hacerse por torneo o por ruleta; la decisión concreta depende del diseño de GA que adopte el equipo.
+
+El ciclo básico de GA se entiende mejor como una secuencia de responsabilidades:
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Inicializar:} crear varias rutas diferentes para no depender de un solo punto de partida.
+\item \textbf{Evaluar:} asignar fitness a cada individuo; el verificador de validez puede detener la búsqueda si aparece un ciclo.
+\item \textbf{Seleccionar padres:} dar mayor oportunidad de reproducción a rutas mejor puntuadas, sin tener que copiar únicamente a la mejor.
+\item \textbf{Cruzar y mutar:} combinar información de padres con un operador que conserve permutaciones y modificar algunas rutas para crear variedad.
+\item \textbf{Reemplazar:} decidir qué individuos entran en la siguiente generación; opcionalmente conservar al mejor para no perder un avance.
+\item \textbf{Repetir o detener:} continuar hasta hallar un ciclo o agotar el presupuesto definido para la búsqueda.
+\end{enumerate}
+
+La \textbf{selección por torneo} compara unos pocos individuos elegidos al azar y toma al mejor del grupo; la \textbf{ruleta} asigna probabilidades proporcionales a un fitness positivo. El \textbf{cruce} intenta heredar segmentos u órdenes útiles de dos padres. La \textbf{mutación} introduce cambios que los padres no aportaron. Ninguna de estas operaciones, por sí sola, garantiza que las aristas de la ruta final existan: siempre hace falta evaluar y verificar.\src{4,5,6}
+
+GA y ABC comparten la idea de mantener varias soluciones y puntuarlas. Su mecánica principal difiere: GA recombina padres y muta descendientes; ABC asigna una fuente de alimento a cada abeja empleada, mejora fuentes por vecindad, recluta observadoras según calidad y reemplaza fuentes estancadas.\src{4,5,7}
+
+\section{Colonia artificial de abejas: versión elegida}
+\subsection{Origen y alcance de la adaptación}
+La versión de referencia es \textbf{Artificial Bee Colony (ABC)} de Derviş Karaboğa (2005). Su propuesta original trataba optimización numérica: cada fuente de alimento era un vector de números reales. Aquí se conserva \emph{su ciclo de fases} y se propone una adaptación discreta por intercambio para permutaciones de vértices. No se usa la fórmula continua de perturbación de coordenadas sobre rutas, porque produciría valores que no son permutaciones. Tampoco se mezclan mecanismos de otros algoritmos de abejas. Existen trabajos académicos que adaptan ABC a problemas combinatorios y a recorridos, lo que respalda la necesidad de definir operadores discretos; el operador y el fitness exactos de este documento son decisiones didácticas.\src{7,8,9}
+
+\begin{center}
+\begin{tabular}{p{3.2cm}p{10.0cm}}
+\toprule
+\textbf{Término ABC} & \textbf{Interpretación en esta propuesta}\\
+\midrule
+Fuente de alimento & Una permutación de todos los vértices, con regreso implícito al inicial.\\
+Néctar o calidad & El fitness $F(R)$ de la ecuación~\eqref{eq:fitness}.\\
+Abeja empleada & Trabaja sobre una fuente asignada e intenta mejorarla mediante un intercambio.\\
+Abeja observadora & Elige una fuente con mayor probabilidad cuanto mayor sea su fitness; también intenta mejorarla.\\
+Abeja exploradora & Sustituye una fuente que acumula demasiados intentos sin mejora por una nueva permutación.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Qué ocurre en un ciclo de ABC}
+En la \textbf{inicialización} se crean fuentes independientes y se calcula su calidad. La analogía con una fuente de alimento no significa que haya abejas moviéndose físicamente por el grafo: cada fuente es una estructura de datos que describe una ruta. Se asocia una abeja empleada a cada fuente. En la versión original de ABC, las abejas empleadas y las observadoras forman los dos grupos principales, y una empleada puede convertirse en exploradora cuando su fuente se abandona.\src{7}
+
+Durante la \textbf{fase de empleadas}, cada fuente recibe al menos un intento local. En la adaptación propuesta, la empleada intercambia dos vértices de su ruta y compara el fitness nuevo con el anterior. Si el intento mejora, conserva la vecina. Si no mejora, la fuente permanece igual y el contador registra el fracaso. Esta fase asegura que incluso una fuente poco popular tenga oportunidad de mejorar.
+
+En la \textbf{fase de observadoras}, se publica la calidad de las fuentes y se eligen con las probabilidades de la ecuación~\eqref{eq:ruleta}. Una fuente de alta calidad puede recibir varias observadoras en el mismo ciclo y otra puede no recibir ninguna. Cada observadora intenta su propio cambio local y aplica la misma decisión voraz. Aquí aparece la explotación: se invierten más intentos en rutas que ya parecen prometedoras.\src{8}
+
+Por último, la \textbf{fase de exploradoras} revisa el estancamiento. Una fuente que acumuló \texttt{limit} intentos sin mejora deja de ocupar un lugar de la colonia y se reemplaza por otra ruta creada desde cero. Esto reintroduce diversidad. El algoritmo guarda la mejor solución histórica aparte, porque abandonar la fuente actual no debería borrar un resultado útil anterior. El ciclo completo se repite hasta hallar un ciclo válido o agotar el presupuesto de búsqueda.\src{7,8}
+
+\subsection{Selección y abandono}
+Si existen $SN$ fuentes y todas tienen fitness positivo, la probabilidad propuesta de que una observadora elija la fuente $i$ es
+\begin{equation}
+p_i=\frac{F(R_i)}{\sum_{j=1}^{SN}F(R_j)}.\label{eq:ruleta}
+\end{equation}
+Una fuente buena tiene más oportunidades, pero una de menor calidad conserva probabilidad no nula. Después de crear una vecina $R'$, se usa \textbf{selección voraz}: se reemplaza $R$ solo si $F(R')>F(R)$; en caso contrario se conserva $R$ y aumenta su contador de intentos sin mejora. En esta propuesta, un empate también cuenta como intento sin mejora. Si el contador alcanza \texttt{limit}, la fuente se abandona y una exploradora crea una nueva permutación; su contador vuelve a cero. Una mejora también reinicia el contador. Se guarda aparte la mejor ruta vista hasta el momento para no perderla al reemplazar fuentes. El parámetro \texttt{limit} y estas fases provienen del ABC de referencia; los detalles de empate y operador discreto son decisiones explícitas de la adaptación.\src{7,8}
+
+\subsection{Pseudocódigo de la adaptación propuesta}\label{sec:pseudo}
+\begin{enumerate}[leftmargin=*,label=\arabic*.]
+\item Recibir el grafo $G=(V,E)$, el número de fuentes $SN$, el número máximo de ciclos $C_{\max}$ y \texttt{limit}. Usar $SN$ empleadas y $SN$ observadoras.
+\item Crear $SN$ permutaciones aleatorias de $V$ con el vértice inicial fijo; para cada una calcular $b$ y $F$, y poner su contador en cero. Guardar la mejor encontrada.
+\item Si alguna permutación pasa la comprobación exacta de ciclo hamiltoniano, devolverla.
+\item Para cada \textbf{abeja empleada}: elegir dos posiciones distintas, excepto la inicial, e intercambiar sus vértices. Evaluar la vecina. Si mejora estrictamente, reemplazar la fuente, reiniciar su contador, actualizar la mejor y comprobar si ya es un ciclo; en otro caso, aumentar el contador.
+\item Calcular las probabilidades $p_i$ con la ecuación~\eqref{eq:ruleta}.
+\item Para cada \textbf{abeja observadora}: elegir una fuente según $p_i$, crear otra vecina mediante intercambio y aplicar la misma regla voraz, el mismo contador y la comprobación de ciclo al aceptar una mejora.
+\item Para cada fuente cuyo contador haya alcanzado \texttt{limit}: activar la fase \textbf{exploradora}, sustituirla por una nueva permutación aleatoria, evaluarla, reiniciar su contador y comprobar si ya es un ciclo.
+\item Actualizar la mejor ruta vista y comprobarla con el verificador exacto. Si es válida, devolverla.
+\item Repetir los pasos 4 a 8 hasta $C_{\max}$ o hasta otro límite de recursos acordado.
+\item Si no se encontró un ciclo, informar \emph{``no encontrado con este presupuesto de búsqueda''}. El agotamiento del tiempo de una heurística no demuestra que el grafo carezca de ciclo.
+\end{enumerate}
+
+Los ajustes principales son $SN$ (cuántas regiones se exploran en paralelo), $C_{\max}$ (presupuesto de búsqueda), \texttt{limit} (cuándo abandonar una fuente estancada) y el \textbf{operador de vecindad} (qué cambios puede intentar cada abeja). Una población muy pequeña puede perder diversidad; una muy grande cuesta más evaluaciones. Un \texttt{limit} bajo promueve exploración frecuente; uno alto permite insistir más sobre una fuente. No hay valores universales: se ajustarían después con experimentos reproducibles, fuera del alcance de esta investigación.\src{7,8}
+
+\begin{center}
+\small
+\begin{tabular}{p{2.5cm}p{5.0cm}p{5.0cm}}
+\toprule
+\textbf{Ajuste} & \textbf{Si se reduce} & \textbf{Si se aumenta}\\
+\midrule
+$SN$ & Menos fuentes y menos diversidad inicial; cada ciclo cuesta menos. & Más rutas simultáneas y más evaluaciones por ciclo.\\
+$C_{\max}$ & La búsqueda acaba antes, incluso si estaba progresando. & Se permiten más intentos, con mayor costo total.\\
+\texttt{limit} & Las fuentes se abandonan con rapidez y se explora más. & Se insiste más tiempo en cada fuente, incluso si está estancada.\\
+Vecindad & Un cambio muy local es barato, pero puede avanzar lentamente. & Cambios más amplios recorren más posibilidades, aunque pueden destruir conexiones útiles.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Cada evaluación de $b(R)$ puede revisar las $n$ parejas de la ruta una vez. Si las aristas del grafo se consultan rápidamente, ese recuento crece linealmente con $n$. Un intercambio solo altera las conexiones que tocan las dos posiciones cambiadas, de modo que una implementación posterior podría actualizar el valor localmente; para comprender y verificar el método resulta más transparente recalcular las $n$ parejas. Esto es una observación de diseño, no un requisito de la práctica.
+
+\section{Ejemplo didáctico de seis vértices}\label{sec:ejemplo}
+Tomemos $V=\{A,B,C,D,E,F\}$ y el siguiente grafo no dirigido, definido por su lista completa de aristas:
+\[
+E=\{AB,BC,CD,DE,EF,FA,AC,BD,CE,DF\}.
+\]
+El orden de letras en una arista no importa: $AB$ y $BA$ denotan la misma conexión. Toda ruta de la tabla empieza en $A$ y muestra el regreso final a $A$.
+
+\begin{center}
+\small
+\begin{tabular}{p{1.5cm}p{7.2cm}p{3.3cm}c}
+\toprule
+\textbf{Fuente} & \textbf{Ruta candidata} & \textbf{Enlaces ausentes} & $F$\\
+\midrule
+$R_1$ & $A-B-C-D-F-E-A$ & $EA$ & $1/2$\\
+$R_2$ & $A-D-C-B-E-F-A$ & $AD,BE$ & $1/3$\\
+$R_3$ & $A-D-B-E-C-F-A$ & $AD,BE,CF$ & $1/4$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Paso 1: evaluar y elegir.} Las tres rutas visitan los seis vértices una vez antes de volver a $A$, pero ninguna es todavía válida. Por la ecuación~\eqref{eq:ruleta}, la suma de fitness es $1/2+1/3+1/4=13/12$. Sus probabilidades son $p_1=6/13$, $p_2=4/13$ y $p_3=3/13$. Por tanto, una observadora prefiere $R_1$, aunque podría escoger cualquiera.
+
+\noindent\textbf{Paso 2: intento de empleada.} La empleada de $R_1$ intercambia $C$ y $D$ y obtiene $A-B-D-C-F-E-A$. Faltan $CF$ y $EA$, así que $b=2$ y $F=1/3$. Como empeora respecto de $1/2$, se rechaza y el contador de $R_1$ aumenta en uno.
+
+\noindent\textbf{Paso 3: intento de observadora.} En una realización posible, una observadora selecciona $R_1$ y luego intercambia $F$ y $E$. Obtiene $R'=A-B-C-D-E-F-A$. Ahora $b(R')=0$ y $F(R')=1$, por lo que se acepta y el contador vuelve a cero.
+
+\noindent\textbf{Paso 4: comprobación independiente.} Los vértices antes del regreso son $A,B,C,D,E,F$, todos distintos y todos los de $V$. Se revisan las seis aristas: $AB\in E$, $BC\in E$, $CD\in E$, $DE\in E$, $EF\in E$ y, crucialmente, $FA\in E$. Por eso $R'$ sí es un ciclo hamiltoniano. Si faltara $FA$, sería solo un camino que visita todos los vértices.
+
+\begin{center}
+\small
+\begin{tabular}{ccccccc}
+\toprule
+\textbf{Posición} & 1 & 2 & 3 & 4 & 5 & 6\\
+\midrule
+\textbf{Conexión} & $A\!\to\!B$ & $B\!\to\!C$ & $C\!\to\!D$ & $D\!\to\!E$ & $E\!\to\!F$ & $F\!\to\!A$\\
+\textbf{¿Existe?} & Sí & Sí & Sí & Sí & Sí & Sí\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La última columna demuestra el cierre. En una representación sin el $A$ final, esa columna debe generarse de manera explícita al verificar. También se comprueba que la lista contiene seis nombres distintos, no solo que aparecen seis posiciones: una lista como $(A,B,C,D,E,E)$ tendría la longitud correcta, pero repetiría $E$ y omitiría $F$.
+
+\noindent\textbf{Paso 5: abandono, si no se encontrara una solución.} Para ilustrar la fase exploradora por separado, supongamos \texttt{limit}$=2$ y que $R_2$ prueba dos vecinos sin mejora. Por ejemplo, al intercambiar $E$ y $F$ produce $A-D-C-B-F-E-A$, con $b=3$; al intercambiar $B$ y $E$ produce $A-D-C-E-B-F-A$, también con $b=3$. Ambos se rechazan. El contador llega a dos y se reemplaza $R_2$ por una permutación nueva. Esta rama es hipotética: si se ejecuta el paso 3 y se encuentra $R'$, el algoritmo ya puede detenerse.
+
+\nota{\textbf{Carácter del ejemplo.} Las elecciones de intercambios y la selección de $R_1$ son una secuencia ilustrativa posible, no una ejecución medida ni un resultado del FHCP.}
+
+\subsection{Qué enseña el ejemplo}
+El paso de $R_1$ a $R'$ muestra que una modificación pequeña puede reparar la única arista faltante, pero el primer intento de la empleada también muestra que un intercambio puede empeorar la ruta. La regla voraz evita aceptar esa pérdida en la fuente actual. Las probabilidades no obligan a escoger la mejor fuente: solo hacen que reciba más atención en promedio. Por último, \texttt{limit} se mide en intentos fallidos de una fuente, no en la edad total de la colonia. Estas cuatro ideas son las que conviene transmitir al equipo al explicar ABC.
+
+\section{Aplicación al ciclo hamiltoniano: opciones y dificultades}
+\textbf{Opción A: permutaciones completas con penalización.} Es la utilizada aquí. Su ventaja es que cada candidato conserva todos los vértices exactamente una vez; se mide cuántas aristas faltan y se busca $b=0$. Su dificultad es que un solo intercambio puede alterar hasta cuatro enlaces y una meseta de rutas con el mismo $b$ puede estancar la búsqueda.
+
+\textbf{Opción B: construir caminos válidos de forma incremental.} Cada paso añade solo un vecino unido por una arista y no visitado. Así se evitan enlaces inválidos durante la construcción, pero el camino puede quedar bloqueado antes de incluir todos los vértices o sin arista de regreso. Para usar ABC habría que definir con cuidado qué es una fuente, cómo se modifica y cómo se reinicia.
+
+\textbf{Opción C: operadores o reparación guiados por el grafo.} Se pueden preferir intercambios que reparen enlaces ausentes o usar inversión de segmentos y búsqueda local. Es una extensión plausible porque hay adaptaciones combinatorias de ABC para recorridos, pero requiere especificar y evaluar su sesgo y costo computacional.\src{9}
+
+\textbf{Dificultades comunes.} La calidad parcial no garantiza que un ciclo exista; los óptimos locales y mesetas pueden hacer que la búsqueda repita intentos; las rutas equivalentes por rotación o reverso desperdician evaluaciones; y el grafo puede tener restricciones estructurales que hagan imposible la meta. Un verificador exacto permite confirmar una solución encontrada, pero una búsqueda heurística que se agota no certifica la inexistencia del ciclo. Si la instancia usa aristas dirigidas o un formato concreto, deben ajustarse representación y verificación.
+
+\subsection{Criterios para interpretar un resultado}
+Un ciclo producido por el método se puede revisar con un procedimiento determinista: contar vértices, comprobar que no se repiten, consultar cada pareja consecutiva y consultar la arista de cierre. Esa revisión sí confirma un resultado positivo. En cambio, si termina el presupuesto sin ruta válida, la conclusión correcta es que \emph{esta ejecución no encontró un ciclo}. Puede haber uno en otra región del espacio de búsqueda. La calidad de la mejor ruta encontrada, el número de intentos y el presupuesto utilizado describen el proceso, pero no convierten una búsqueda heurística en una prueba de inexistencia.
+
+Para comparar una futura implementación de ABC con GA de manera justa, ambos tendrían que resolver la misma instancia y usar el mismo verificador de ciclos. El fitness podría compartirse para facilitar la interpretación de resultados; si se usa una función distinta, habría que explicarla. El documento no reporta tiempos, tasas de éxito ni comparaciones, porque esas cifras exigirían ejecuciones reales y un protocolo de medición.
+
+\section{Fuentes consultadas y qué respaldan}
+\begingroup\small
+\begin{enumerate}[leftmargin=*,label={[\arabic*]},itemsep=3pt]
+\item \textbf{Flinders Hamiltonian Cycle Project}, ``Flinders Hamiltonian Cycle Project'', s.~f., \url{https://sites.flinders.edu.au/flinders-hamiltonian-cycle-project/}. Define el problema hamiltoniano y distingue su objetivo del TSP. El equipo del proyecto, ``FHCP Challenge Set'', s.~f., \url{https://sites.flinders.edu.au/flinders-hamiltonian-cycle-project/fhcp-challenge-set/}, describe el conjunto FHCP y su formato. Se citan como fuente institucional de contexto, no como evidencia experimental de este ejemplo.
+\item \textbf{Michael Haythorpe}, ``FHCP Challenge Set: The First Set of Structurally Difficult Instances of the Hamiltonian Cycle Problem'', 2018, \url{https://arxiv.org/abs/1902.10352}. Respalda la identidad y finalidad del conjunto FHCP. La fecha de publicación del artículo de revista es 2018; la versión arXiv enlazada es posterior.
+\item \textbf{David L. Poole y Alan K. Mackworth}, \emph{Artificial Intelligence: Foundations of Computational Agents}, 3.\textsuperscript{a} ed., Cambridge University Press, 2023, sección 3.6, \url{https://www.artint.info/3e/html/ArtInt3e.Ch3.S6.html}. Respalda la explicación de búsqueda informada y de función heurística como guía estimativa.
+\item \textbf{John H. Holland}, \emph{Adaptation in Natural and Artificial Systems}, 1975; reimpresión MIT Press, 1992, \url{https://doi.org/10.7551/MITPRESS/1090.001.0001}. Fundamento histórico del algoritmo genético y de la adaptación mediante recombinación y selección.
+\item \textbf{Xin-She Yang}, ``Metaheuristic Optimization'', \emph{Scholarpedia}, 2011, \url{https://www.scholarpedia.org/article/Metaheuristic_Optimization}. Respalda el esquema general de GA: codificación, fitness, población, selección, cruce, mutación y reemplazo.
+\item \textbf{David E. Goldberg y Robert Lingle Jr.}, ``Alleles, Loci, and the Traveling Salesman Problem'', \emph{Proceedings of the First International Conference on Genetic Algorithms}, 1985, \url{https://gpbib.pmacs.upenn.edu/icga/icga1985-ocr.pdf}. Respalda el uso de permutaciones y cruces especializados, como PMX, para recorridos.
+\item \textbf{Derviş Karaboğa}, ``An Idea Based on Honey Bee Swarm for Numerical Optimization'', informe técnico TR06, Universidad de Erciyes, 2005, \href{https://citeseerx.ist.psu.edu/document?doi=cf20e34a1402a115523910d2a4243929f6704db1&repid=rep1&type=pdf}{enlace al informe}. Fuente primaria de las fases de ABC, roles de abejas, fuentes, selección y parámetro \texttt{limit}.
+\item \textbf{Derviş Karaboğa}, ``Artificial Bee Colony Algorithm'', \emph{Scholarpedia} 5(3):6915, 2010, \href{https://www.scholarpedia.org/article/Artificial_bee_colony_algorithm}{enlace al artículo}. Expone la versión de ABC con selección probabilística, mejora voraz, abandono y controles principales.
+\item \textbf{Indadul Khan y Manas Kumar Maiti}, ``A Swap Sequence Based Artificial Bee Colony Algorithm for Traveling Salesman Problem'', \emph{Swarm and Evolutionary Computation} 44, 428--438, 2019, \url{https://doi.org/10.1016/j.swevo.2018.05.006}. Respalda que las variantes discretas para recorridos requieren operadores de permutación; no se atribuye a este artículo la adaptación específica propuesta aquí.
+\end{enumerate}
+\endgroup
+
+\end{document}

@@ -1,0 +1,127 @@
+\chapter{FHCP Challenge y enjambre de partículas}
+\section{Métricas del FHCP Challenge}
+
+El Flinders Hamiltonian Cycle Project (FHCP) define el HCP como el problema de determinar si un grafo de \(N\) vértices contiene un ciclo simple de longitud \(N\). \cite{de2}
+
+\subsection{Características del benchmark}
+
+\begin{itemize}
+    \item El FHCP Challenge Set contiene 1{,}001 instancias del HCP. \cite{aco9}
+    \item Los tamaños de los grafos van desde 66 hasta 9{,}528 vértices. \cite{aco9}
+    \item El tamaño promedio es ligeramente superior a 3{,}000 vértices. \cite{aco9}
+    \item Las instancias fueron diseñadas para ser difíciles debido a su estructura, no únicamente por su tamaño. \cite{de2}
+    \item Todas las instancias tienen al menos un ciclo hamiltoniano conocido. \cite{de2}
+\end{itemize}
+
+\subsection{Formato de los archivos}
+
+Los archivos del FHCP utilizan el formato HCP, estructurado en tres secciones:
+
+\begin{itemize}
+    \item Encabezado.
+    \item Lista de aristas.
+    \item Pie de archivo.
+\end{itemize}
+
+El campo \texttt{DIMENSION} indica el número de vértices. El campo \texttt{EDGE\_DATA\_FORMAT : EDGE\_LIST} indica que las conexiones se representan mediante una lista de aristas. \cite{aco9}
+
+Los archivos de solución o tour contienen la secuencia de vértices en el orden en que son visitados por el ciclo hamiltoniano. \cite{aco9}
+
+\subsection{Criterios de comparación}
+
+Para realizar una comparación justa entre algoritmos, se deben fijar:
+
+\begin{itemize}
+    \item El mismo subconjunto de instancias.
+    \item El mismo límite de tiempo o número de evaluaciones.
+    \item Varias ejecuciones independientes por instancia.
+    \item La misma definición de éxito.
+    \item La verificación de que el ciclo encontrado sea válido.
+    \item Métricas de tiempo, evaluaciones, tasa de éxito y desviación estándar.
+\end{itemize}
+
+
+\subsection{Reglas históricas y alcance de la comparación}
+El concurso histórico estuvo abierto del 30 de septiembre de 2015 al 30 de septiembre de 2016. Ganaba la entrega con más grafos resueltos; en caso de empate se consideraba la recibida primero. El mejor equipo resolvió 985 instancias. Las reglas exigían soluciones en el formato correcto. Esta cobertura es una referencia histórica y no un tiempo de ejecución comparable directamente con nuestro equipo. Las semillas, repeticiones y presupuestos uniformes antes propuestos son un protocolo académico adicional, no exigencias oficiales del concurso.\cite{aco9}
+
+\subsection{Ejemplo completo de entrada y salida}
+Este ejemplo propio contiene cinco vértices. Cada par de la entrada representa una arista no dirigida. Los terminadores -1 y EOF no son vértices.
+\begin{verbatim}
+NAME : ciclo5
+COMMENT : Ejemplo didactico
+TYPE : HCP
+DIMENSION : 5
+EDGE_DATA_FORMAT : EDGE_LIST
+EDGE_DATA_SECTION
+1 2
+2 3
+3 4
+4 5
+5 1
+-1
+EOF
+\end{verbatim}
+La solución lista cada vértice una sola vez; el cierre es implícito:
+\begin{verbatim}
+NAME : ciclo5_solucion
+COMMENT : Ciclo verificado
+TYPE : TOUR
+DIMENSION : 5
+TOUR_SECTION
+1
+2
+3
+4
+5
+-1
+EOF
+\end{verbatim}
+Se propone validar rangos de identificadores, encabezados y aristas; conservar la numeración de entrada y restaurarla al exportar. El verificador debe comprobar cobertura, unicidad, adyacencias y cierre, no igualdad exacta con un tour de referencia: un grafo puede tener varios ciclos correctos.\cite{aco9}
+
+\section{Particle Swarm Optimization (PSO)}
+
+PSO modela un enjambre de partículas que ajustan su posición según su mejor experiencia personal y la mejor experiencia colectiva.
+
+La actualización de velocidad se define como:
+
+\[
+v_i^{t+1}=wv_i^t+c_1r_1(p_i-x_i^t)+c_2r_2(g-x_i^t)
+\]
+
+La actualización de posición es:
+
+\[
+x_i^{t+1}=x_i^t+v_i^{t+1}
+\]
+
+donde:
+
+\begin{itemize}
+    \item \(w\) es el coeficiente de inercia.
+    \item \(c_1\) y \(c_2\) son coeficientes de aprendizaje.
+    \item \(r_1\) y \(r_2\) son valores aleatorios.
+    \item \(p_i\) es la mejor posición personal.
+    \item \(g\) es la mejor posición global.
+\end{itemize}
+
+Para el HCP, PSO requiere una codificación discreta, como random keys, o una variante discreta con operadores definidos sobre intercambios. Las ecuaciones continuas no pueden aplicarse directamente a los identificadores de vértices. \cite{pso1995,pso1998}
+
+
+\subsection{Alcance de las ecuaciones}
+La formulación con peso de inercia $w$ corresponde a la modificación de Shi y Eberhart de 1998; no se atribuye como tal al artículo original de 1995. Los factores aleatorios se generan independientemente por componente y actualización; los productos con vectores se interpretan componente a componente. $p_i$ guarda la posición con mejor costo personal y $g$ la mejor conocida del enjambre en una topología global.\cite{pso1995,pso1998}
+
+\subsection{Decodificación y pseudocódigo propuestos}
+Se complementa la propuesta de investigacion.tex con claves aleatorias: una coordenada real por vértice y un ordenamiento para obtener la permutación. Claves $(0.4,0.1,0.8,0.3,0.6)$ para $(A,B,C,D,E)$ producen $(B,D,A,E,C)$. Un empate se resuelve por identificador. La representación garantiza unicidad y cobertura, pero no la existencia de las conexiones. La técnica de claves procede de Bean; usarla con PSO y el costo de conexiones ausentes es aquí una propuesta de adaptación.\cite{de13}
+\begin{enumerate}
+\item Recibir el grafo, tamaño del enjambre $S$, parámetros $w,c_1,c_2$, semilla y presupuesto. Definir límites: por ejemplo, recortar claves a $[0,1]$ y velocidades a $[-v_{\max},v_{\max}]$.
+\item Inicializar posiciones y velocidades, ordenar claves y evaluar el costo $b$ de cada permutación. Contar también estas evaluaciones. Guardar los mejores personales y global y verificar cualquier costo cero.
+\item Mientras queden recursos, actualizar velocidad y posición de cada partícula, y aplicar los límites establecidos.
+\item Decodificar, evaluar y contabilizar el esfuerzo. Actualizar el mejor personal si el costo disminuye; conservar el anterior en empate.
+\item Actualizar el mejor global. En esta propuesta se hace después de cada partícula; una variante sincrónica lo haría al final de la iteración.
+\item Verificar cualquier candidata de costo cero y devolverla si es válida. Si se agotan los recursos, devolver la mejor candidata con el estado ``no encontrado'', sin afirmar inexistencia.
+\end{enumerate}
+
+\subsection{Ejemplo didáctico y dificultades}
+Sobre $E=\{AB,BC,CD,DE,EA\}$, las claves $(0.1,0.2,0.4,0.3,0.5)$ producen $(A,B,D,C,E)$, con dos conexiones ausentes. Un desplazamiento $(0,0,-0.1,0.1,0)$ produce claves ordenadas y la ruta $(A,B,C,D,E)$: se verifican $AB,BC,CD,DE,EA$. Ese desplazamiento puede corresponder a una velocidad previa igual, con $w=1$ y términos de atracción nulos en ese paso. Es una ilustración algebraica elegida a mano, no una ejecución ni una recomendación de parámetros.
+
+La decodificación cuesta $O(n\log n)$ con ordenamiento por comparación; verificar conexiones cuesta $O(n)$ con consultas constantes de adyacencia. Almacenar el enjambre y sus recuerdos requiere $O(Sn)$ espacio además del grafo. Diferentes vectores pueden decodificar a la misma permutación, produciendo mesetas. La convergencia del enjambre puede reducir diversidad sin alcanzar un ciclo. Reinicios, límites y topología social son decisiones que deben documentarse y medirse, sin prometer éxito en un presupuesto finito.
