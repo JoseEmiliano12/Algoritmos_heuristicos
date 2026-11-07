@@ -1,0 +1,32 @@
+{
+  "latex-workshop.latex.tools": [
+    {
+      "name": "latexmk-local",
+      "command": "/srv/sst/.local/texlive/bin/x86_64-linux/latexmk",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "-halt-on-error",
+        "-pdf",
+        "-outdir=%OUTDIR%",
+        "%DOC%"
+      ],
+      "env": {
+        "PATH": "/srv/sst/.local/texlive/bin/x86_64-linux:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  ],
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "TeX Live local (/srv)",
+      "tools": [
+        "latexmk-local"
+      ]
+    }
+  ],
+  "latex-workshop.latex.recipe.default": "first",
+  "terminal.integrated.env.linux": {
+    "PATH": "/srv/sst/.local/texlive/bin/x86_64-linux:${env:PATH}"
+  }
+}
