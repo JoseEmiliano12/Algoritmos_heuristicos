@@ -1,1 +1,16 @@
 latex-colab
+__pycache__/
+
+# Archivos generados al compilar LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bcf
+*.lof
+*.lot
+*.run.xml
+desktop.ini
