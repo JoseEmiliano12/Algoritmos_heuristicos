@@ -1,0 +1,140 @@
+\chapter{Algoritmos implementados}
+\label{cap:alg}
+
+Para poder compararlos, todos los algoritmos siguen las mismas reglas
+(\nolinkurl{src/algoritmos/__init__.py}). Reciben el grafo, un número máximo de evaluaciones
+de la función de costo, una semilla aleatoria y un límite de tiempo. Devuelven la mejor ruta que
+encontraron (el arreglo de vértices), su costo, cuántas evaluaciones usaron y el historial de cómo
+fue mejorando. La semilla hace que cada corrida se pueda repetir y dé exactamente el mismo
+resultado.
+
+La tabla~\ref{tab:parametros} muestra los parámetros que usamos. Son valores iniciales tomados de
+la investigación previa y de pruebas con grafos pequeños; no hicimos una calibración sistemática
+sobre el FHCP (lo comentamos en las limitaciones).
+
+\begin{table}[H]
+\centering\small\filas
+\caption{Parámetros usados en los experimentos. \emph{auto} quiere decir que el valor se calcula
+según el tamaño del grafo o el presupuesto.}
+\label{tab:parametros}
+\input{tablas/parametros}
+\end{table}
+
+\section{Algoritmo genético (GA)}
+\label{sec:ga}
+Es nuestro algoritmo de control. Imita la evolución natural \cite{abc4}: hay una \textbf{población} de 40 rutas y en
+cada generación se crean rutas nuevas combinando las mejores.
+\begin{enumerate}
+  \item \textbf{Selección por torneo:} se toman 3 rutas al azar y se queda la de menor costo.
+  \item \textbf{Cruce OX} (\emph{order crossover}, con probabilidad 0.9): el hijo copia un tramo
+        de un padre y completa el resto con los vértices que faltan, en el orden en que aparecen
+        en el otro padre. Así el hijo siempre es una permutación válida.
+  \item \textbf{Mutación} (probabilidad 0.3): intercambiar dos vértices o invertir un tramo.
+  \item \textbf{Elitismo:} las 2 mejores rutas pasan directo a la siguiente generación, para no
+        perderlas.
+\end{enumerate}
+El vértice 0 siempre va al inicio, porque una ruta y su rotación representan el mismo ciclo y así
+evitamos tener soluciones repetidas en la población.
+
+\section{Recocido simulado (SA)}
+\label{sec:sa}
+Se inspira en cómo se enfría un metal \cite{sa4}. Parte de una ruta al azar y en cada paso propone
+un pequeño cambio:
+\begin{itemize}
+  \item Si el cambio mejora o empata el costo, se acepta.
+  \item Si lo empeora, se acepta con probabilidad $e^{-\Delta/T}$, donde $\Delta$ es cuánto
+        empeora y $T$ es la ``temperatura'' \cite{sa8}.
+\end{itemize}
+Al principio la temperatura es alta y se aceptan bastantes cambios malos, lo que ayuda a no
+quedarse atorado. Después, la temperatura baja poco a poco ($T \leftarrow \alpha T$) y el
+algoritmo se vuelve más exigente. Escogimos la temperatura inicial para que un empeoramiento de
+una arista se acepte con probabilidad 0.8, y calculamos $\alpha$ para que la temperatura llegue a
+su mínimo justo cuando se acaba el presupuesto. Así el enfriamiento es lo más lento posible, como
+pide el enunciado.
+
+Probamos dos versiones:
+\begin{itemize}
+  \item \alg{SA (swap)}: la versión literal del enunciado, que solo intercambia dos vértices.
+  \item \alg{SA (mixto)}: la mitad de las veces intercambia y la otra mitad invierte un tramo de
+        la ruta (2-opt). Invertir un tramo cambia solo dos conexiones, mientras que un
+        intercambio cambia hasta cuatro, así que es un movimiento más ``suave''.
+\end{itemize}
+
+\section{Colonia de hormigas (ACO)}
+\label{sec:aco}
+Las hormigas reales dejan feromona en los caminos buenos y las demás tienden a seguirlos
+\cite{aco1,aco3}. En nuestra versión, en cada iteración 10 hormigas construyen una ruta:
+\begin{enumerate}
+  \item Cada hormiga empieza en un vértice al azar y solo avanza por aristas que existen.
+  \item Elige el siguiente vértice con una probabilidad que depende de dos cosas: la
+        \textbf{feromona} de la arista y una \textbf{heurística} que prefiere los vértices con
+        menos vecinos libres (regla de Warnsdorff). La idea es visitar primero los vértices
+        ``difíciles'', antes de que se queden sin salida.
+  \item Al final de la iteración, la feromona se evapora un 10\,\% y se refuerza en las aristas
+        de la mejor ruta. Además la feromona tiene un mínimo y un máximo (variante MAX-MIN), y se
+        reinicia si la búsqueda lleva 100 iteraciones sin mejorar.
+\end{enumerate}
+
+El problema es que en estos grafos las hormigas se atoran muy seguido: llegan a un vértice cuyos
+vecinos ya fueron visitados. Por eso hicimos la variante \alg{ACO + Pósa}. Cuando una hormiga se
+atora, en lugar de rendirse aplica una \textbf{rotación de Pósa} \cite{posa1976}: si el extremo
+del camino tiene un vecino que está en medio del camino, se invierte la parte final para que el
+extremo cambie y la hormiga pueda seguir avanzando. Se permiten hasta 50 rotaciones por hormiga.
+
+Hay un detalle importante: estas rotaciones no las contamos como evaluaciones de la función de
+costo, porque no calculan el costo de una ruta completa. Por eso, en los resultados, el número de
+evaluaciones de \alg{ACO + Pósa} sale mucho más bajo que el de los demás, y no se debe comparar
+directamente.
+
+\section{Colonia artificial de abejas (ABC)}
+\label{sec:abc}
+Se basa en cómo las abejas buscan comida \cite{abc7,abc8}. Cada ``fuente de alimento'' es una ruta, y
+usamos 20. En cada ciclo hay tres tipos de abejas:
+\begin{enumerate}
+  \item \textbf{Empleadas:} cada una intenta mejorar su fuente con un pequeño cambio. Si la ruta
+        nueva es igual o mejor, la cambia.
+  \item \textbf{Observadoras:} eligen fuentes al azar, pero con más probabilidad las de menor
+        costo, y también intentan mejorarlas.
+  \item \textbf{Exploradoras:} si una fuente lleva demasiados intentos sin mejorar ($2n$), se
+        abandona y se reemplaza por una ruta nueva al azar. La mejor fuente nunca se abandona.
+\end{enumerate}
+El cambio que hacen las abejas es la \textbf{inversión guiada} de la sección~\ref{cap:repr}, que
+repara conexiones rotas usando aristas reales del grafo. Otra decisión importante fue aceptar
+los cambios que \emph{empatan} el costo: en estos grafos casi todos los movimientos dejan el
+costo igual, y si solo aceptáramos mejoras estrictas, la búsqueda se quedaría congelada.
+
+\section{Evolución diferencial (DE)}
+\label{sec:de}
+La evolución diferencial \cite{de10} fue creada para problemas con números reales, así que tuvimos que
+adaptarla. Usamos \emph{random keys} \cite{de13} (sección~\ref{cap:repr}): cada solución es un vector de
+números y la ruta sale de ordenarlos. Con una población de 30 vectores, en cada generación y para
+cada vector $x$:
+\begin{enumerate}
+  \item \textbf{Mutación:} se crea un vector nuevo $v = x_{r_1} + F\,(x_{r_2}-x_{r_3})$ a partir de
+        tres vectores distintos elegidos al azar, con $F=0.5$.
+  \item \textbf{Cruce:} cada componente se toma de $v$ con probabilidad $CR=0.9$, y si no, de $x$.
+  \item \textbf{Selección:} si la ruta del vector nuevo cuesta lo mismo o menos que la de $x$, lo
+        reemplaza.
+\end{enumerate}
+En la investigación encontramos otras formas de adaptar DE a permutaciones, como la regla SPV
+\cite{de17}. Escogimos \emph{random keys} porque es la más sencilla y garantiza que nunca salga
+una ruta inválida.
+
+\section{Enjambre de partículas (PSO)}
+\label{sec:pso}
+Simula un grupo de partículas que se mueven buscando el mejor lugar; cada una recuerda su mejor
+posición y conoce la mejor de todo el enjambre \cite{pso1995}. Igual que en DE, cada partícula es
+un vector de \emph{random keys}. Usamos 30 partículas, y en cada paso la velocidad $v$ y la
+posición $x$ de cada una se actualizan así:
+\[
+v \leftarrow w\,v + c_1 r_1 (p - x) + c_2 r_2 (g - x), \qquad x \leftarrow x + v,
+\]
+donde $p$ es la mejor posición de la partícula, $g$ la mejor del enjambre y $r_1,r_2$ son números
+al azar entre 0 y 1. El término $w$ es el \emph{peso de inercia} \cite{pso1998}, que controla
+cuánto conserva la partícula su dirección anterior. La velocidad se limita a $\pm0.2$ para que
+las partículas no salgan disparadas.
+
+Al probarlo vimos que el enjambre se juntaba muy rápido alrededor de la mejor partícula y dejaba
+de explorar, incluso con grafos de 8 vértices. Por eso agregamos un \textbf{reinicio}: si la mejor
+solución no mejora en 30 pasos, todas las partículas, excepto la mejor, se mandan a posiciones
+nuevas al azar.

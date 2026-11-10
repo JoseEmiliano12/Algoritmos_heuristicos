@@ -1,0 +1,64 @@
+\chapter{Representación de las rutas y función de costo}
+\label{cap:repr}
+
+\section{Cómo representamos una solución}
+Una de las ideas que más se repite en la investigación previa es que la forma de representar el
+problema influye mucho en qué tan bien funciona el algoritmo. En nuestro caso, toda solución
+candidata es una \textbf{permutación} de los vértices, es decir, una lista que contiene cada
+vértice una sola vez. Una permutación puede ser o no un ciclo hamiltoniano, según las aristas que
+falten, pero nunca es una ruta ``ilegal'' con vértices repetidos u olvidados.
+
+Cada algoritmo se asegura de mantener esta regla a su manera:
+\begin{itemize}
+  \item \textbf{GA, SA y ABC} trabajan directamente con permutaciones, y sus operaciones
+        (cruzar, intercambiar dos vértices, invertir un tramo) siempre devuelven otra permutación.
+  \item \textbf{ACO} construye las rutas avanzando solo por aristas que existen. Si una hormiga
+        se queda atorada, se completa la ruta con los vértices que le faltan.
+  \item \textbf{DE y PSO} están pensados para trabajar con números reales, no con listas. Por eso
+        usamos \emph{random keys}: cada solución es un vector de $n$ números entre 0 y 1, uno por
+        vértice, y la ruta se obtiene ordenando los vértices según su número. Por ejemplo,
+        $(0.7,\ 0.1,\ 0.4)$ da la ruta $(2,3,1)$. Como ordenar siempre da una permutación, estos
+        algoritmos tampoco pueden generar rutas inválidas (\texttt{src/representacion.py}).
+\end{itemize}
+
+Al final de los experimentos verificamos que las 2\,112 rutas guardadas fueran permutaciones
+válidas, y todas lo fueron (sección~\ref{sec:verificacion}).
+
+\section{Función de costo}
+Para que los algoritmos sepan si van bien, necesitan una forma de calificar cada ruta. La que
+usamos es muy simple: \textbf{contar cuántas conexiones de la ruta no existen en el grafo},
+incluyendo la conexión entre el último vértice y el primero.
+\[
+f(\pi)=\text{número de pares consecutivos }(v_i,v_{i+1})\text{ de la ruta que no son arista del grafo}.
+\]
+Si $f(\pi)=0$, la ruta es un ciclo hamiltoniano, así que el objetivo de todos los algoritmos es
+llevar este número a cero. En el ejemplo de la sección anterior, la ruta $(1,3,2,4,5)$ tiene
+$f=1$ porque solo le falta la arista $2\!-\!4$.
+
+Escogimos esta función por tres razones:
+\begin{enumerate}
+  \item Es fácil de entender: el valor dice directamente cuántas aristas faltan.
+  \item Es la misma para todos los algoritmos, así que la comparación es justa.
+  \item Se puede actualizar muy rápido. Cuando un algoritmo intercambia dos vértices o invierte
+        un tramo de la ruta, solo cambian unas cuantas conexiones, así que no hace falta revisar
+        la ruta completa: basta con revisar las conexiones que cambiaron. Comprobamos que este
+        cálculo rápido coincide con el cálculo completo en 25\,440 casos de prueba
+        (\texttt{python -m src.fitness}).
+\end{enumerate}
+
+Su desventaja es que muchas rutas distintas tienen el mismo costo. Esto crea zonas ``planas''
+donde el algoritmo no sabe hacia dónde moverse. Es una de las razones por las que algunos
+algoritmos se estancan, como veremos en los resultados.
+
+\section{Un movimiento guiado por el grafo}
+Además de los movimientos al azar, programamos un movimiento ``inteligente'' que llamamos
+\textbf{inversión guiada} (\texttt{src/operadores.py}). Funciona así:
+\begin{enumerate}
+  \item Busca en la ruta una conexión que no existe, por ejemplo entre $u$ y el vértice que le
+        sigue.
+  \item Elige un vecino real $w$ de $u$ en el grafo.
+  \item Invierte el tramo de la ruta que está entre ellos, de modo que $w$ quede justo después
+        de $u$.
+\end{enumerate}
+Así, en vez de mover vértices al azar, el algoritmo intenta reparar una conexión rota usando una
+arista que sí existe. Lo usa principalmente ABC, y como veremos, hace una gran diferencia.

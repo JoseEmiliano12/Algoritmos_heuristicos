@@ -1,0 +1,90 @@
+% Reporte técnico y comparativo. Compilar con: latexmk -pdf main.tex
+% Antes, desde la raíz del repositorio: python Reporte/actualizar.py  (tablas y figuras)
+\documentclass[letterpaper,11pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[spanish,es-noshorthands,es-tabla,es-nodecimaldot]{babel}
+\usepackage[margin=2.5cm,headheight=14pt]{geometry}
+\usepackage{microtype}
+\usepackage{graphicx,eso-pic}
+\usepackage{amsmath,amssymb}
+\usepackage{array,booktabs,tabularx,adjustbox}
+\usepackage{enumitem,float,subcaption}
+\usepackage[table]{xcolor}
+\usepackage{titlesec,fancyhdr}
+\usepackage[font=small,labelfont=bf,labelsep=period]{caption}
+\usepackage[hidelinks]{hyperref}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\graphicspath{{figuras/}}
+
+% --- Diseño ------------------------------------------------------------------
+\definecolor{acento}{RGB}{31,73,125}
+\titleformat{\chapter}[block]{\normalfont\LARGE\bfseries\color{acento}}{\thechapter.}{0.5em}{}[\vspace{-4pt}{\color{acento}\titlerule[1pt]}]
+\titlespacing*{\chapter}{0pt}{-20pt}{18pt}
+\titleformat{\section}{\normalfont\Large\bfseries\color{acento}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
+\setlength{\parskip}{4pt}
+\setlist{itemsep=2pt,topsep=4pt}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}
+\fancyhead[L]{\small\color{gray}Ciclo hamiltoniano con metaheurísticas}
+\fancyhead[R]{\small\color{gray}\leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\thepage}\renewcommand{\headrulewidth}{0pt}}
+\newcommand{\filas}{\rowcolors{2}{gray!8}{white}}
+\newcommand{\alg}[1]{\textsf{#1}}
+\input{tablas/datos}
+
+% --- Portada (igual que la plantilla del equipo) -------------------------------
+\newcommand{\programa}{}
+\newcommand{\alumno}{JOSE EMILIANO PUGA SAUCEDO, OSVALDO FABIAN RAMIRO BALBOA, BARBIE VIRIDIANA LUMBRERAS OLVERA, JESUS JUAREZ RAMIREZ y ISRAEL ELISEO CISNEROS SALAS}
+\newcommand{\profesor}{Dr. Said Polanco Martagon}
+\newcommand{\materia}{Fundamentos de Inteligencia Artificial}
+\newcommand{\fecha}{Noviembre 2026}
+\newcommand\AddBackground{
+  \IfFileExists{Portada.pdf}{
+    \AddToShipoutPicture*{
+      \put(0,0){\includegraphics[width=\paperwidth,height=\paperheight]{Portada.pdf}}
+    }
+  }{}
+}
+
+\begin{document}
+\begin{titlepage}
+  \AddBackground
+  \centering
+  \vspace*{1cm}
+  \large\textbf{UNIVERSIDAD POLITECNICA DE VICTORIA}\\[0.5cm]
+  \normalsize\textbf{\programa}\\[2cm]
+  \normalsize\textbf{REPORTE TÉCNICO Y COMPARATIVO:\\ CICLO HAMILTONIANO CON METAHEURÍSTICAS}\\[0.3cm]
+  \normalsize\textbf{\materia}\\[1cm]
+  \large\textbf{PRESENTA}\\[0.5cm]
+  \normalsize \alumno\\[0.8cm]
+  \large\textbf{PROFESOR}\\[0.5cm]
+  \normalsize \profesor\\[1.2cm]
+  \normalsize Fecha: \fecha\\[1cm]
+\end{titlepage}
+
+\tableofcontents
+
+\input{capitulos/introduccion}
+\input{capitulos/grafo}
+\input{capitulos/representacion}
+\input{capitulos/algoritmos}
+\input{capitulos/diseno}
+\input{capitulos/comparativa}
+\input{capitulos/benchmarking}
+\input{capitulos/conclusiones}
+
+\appendix
+\input{capitulos/anexo_codigo}
+
+\clearpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Referencias}
+\renewcommand{\bibname}{Referencias}
+\input{fuentes}
+\end{document}
