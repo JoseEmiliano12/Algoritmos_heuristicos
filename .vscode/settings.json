@@ -28,5 +28,15 @@
   "latex-workshop.latex.recipe.default": "first",
   "terminal.integrated.env.linux": {
     "PATH": "/srv/sst/.local/texlive/bin/x86_64-linux:${env:PATH}"
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.jj": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/build/sketch": true,
+    "**/typings": true
   }
 }

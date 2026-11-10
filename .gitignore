@@ -21,3 +21,4 @@ resultados/
 datos/fhcp_completo/
 # Copia local del repositorio con secretos (.env) y node_modules
 Challlenge_FundamentosIA.zip
+.venv/
