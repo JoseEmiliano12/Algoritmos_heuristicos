@@ -14,13 +14,16 @@ from src.fitness import (
 )
 
 
-def resolver(adj, max_evals, semilla, tiempo_max=60, T0=None, alfa=0.9999,
+def resolver(adj, max_evals, semilla, tiempo_max=60, T0=None, alfa=None,
              T_min=1e-6, vecino="mixto"):
     """Devuelve ruta, costo, evals, iters e historial según el contrato común.
 
     ``vecino``: "swap", "inversion" o "mixto" (predeterminado: mitad de cada uno).
     Se fija el primer vértice y se eligen uniformemente dos índices restantes.
     ``T0=None`` acepta un aumento de costo de 1 con probabilidad inicial 0.8.
+    ``alfa=None`` calcula el enfriamiento para que T llegue a ``T_min`` justo al agotar
+    ``max_evals`` (enfriamiento lento que usa todo el presupuesto); con un valor fijo,
+    p. ej. 0.9999, la búsqueda puede terminar por temperatura antes del presupuesto.
     Se enfría tras cada propuesta; iters cuenta las propuestas evaluadas.
     historial contiene el mejor costo inicial y luego cada 100 evaluaciones,
     incluyendo siempre el valor final. Los deltas cuestan O(1); aplicar una
@@ -43,6 +46,8 @@ def resolver(adj, max_evals, semilla, tiempo_max=60, T0=None, alfa=0.9999,
         raise ValueError("max_evals debe ser un entero positivo.")
     if T0 is None:
         T0 = -1.0 / math.log(0.8)
+    if alfa is None:
+        alfa = (T_min / T0) ** (1.0 / max_evals) if T0 > T_min > 0 else 0.5
     if not all(math.isfinite(x) for x in (T0, T_min, alfa, tiempo_max)):
         raise ValueError("Los parámetros numéricos deben ser finitos.")
     if not T0 > T_min > 0 or not 0 < alfa < 1 or tiempo_max <= 0:

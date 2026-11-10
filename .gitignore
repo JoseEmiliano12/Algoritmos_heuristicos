@@ -14,3 +14,10 @@ __pycache__/
 *.lot
 *.run.xml
 desktop.ini
+
+# Resultados de experimentos (se suben solo los finales, a mano)
+resultados/
+# Set completo del FHCP (92 MB); en git solo van las instancias de datos/fhcp/
+datos/fhcp_completo/
+# Copia local del repositorio con secretos (.env) y node_modules
+Challlenge_FundamentosIA.zip

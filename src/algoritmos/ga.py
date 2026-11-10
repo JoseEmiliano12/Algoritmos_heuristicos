@@ -122,8 +122,10 @@ def resolver(adj, max_evals, semilla, tiempo_max=60, tam_poblacion=40,
                and time.perf_counter() - inicio_t < tiempo_max):
             p1 = _torneo(poblacion, tam_torneo, rng)
             p2 = _torneo(poblacion, tam_torneo, rng)
-            hijo = cruce_ox(p1, p2, rng) if rng.random() < prob_cruce else p1[:]
-            if rng.random() < prob_mutacion:
+            cruzado = rng.random() < prob_cruce
+            hijo = cruce_ox(p1, p2, rng) if cruzado else p1[:]
+            # Sin cruce, mutar siempre: evaluar una copia exacta del padre gasta presupuesto.
+            if not cruzado or rng.random() < prob_mutacion:
                 mutar = mutar_inversion if rng.random() < prob_inversion else mutar_swap
                 hijo = mutar(hijo, rng)
             valor = costo(hijo, adj)

@@ -19,7 +19,7 @@ Probar: ``python -m src.algoritmos.aco`` desde la raíz del repositorio.
 import random
 import time
 
-from src.fitness import costo, es_ciclo_hamiltoniano
+from src.fitness import costo, es_ciclo_hamiltoniano, validar_parametros
 
 
 def _construir(adj, tau, alfa, beta, rotaciones, rng):
@@ -68,8 +68,11 @@ def resolver(adj, max_evals, semilla, tiempo_max=60, hormigas=10, alfa=1.0, beta
     ``historial`` guarda el mejor costo al final de cada iteración (cada ``hormigas``
     evaluaciones). ``rotaciones = 0`` es ACO puro; ``> 0`` es la variante con Pósa.
     """
-    rng = random.Random(semilla)
     n = len(adj)
+    validar_parametros(n, max_evals, tiempo_max)  # evita devolver ruta=None sin evaluar
+    if hormigas < 1 or not 0 < rho < 1 or not tau_max > 0:
+        raise ValueError("Se requieren hormigas >= 1, 0 < rho < 1 y tau_max > 0.")
+    rng = random.Random(semilla)
     if tau_min is None:
         tau_min = tau_max / (2 * n)
     tau = [dict.fromkeys(adj[u], tau_max) for u in range(n)]
@@ -78,7 +81,8 @@ def resolver(adj, max_evals, semilla, tiempo_max=60, hormigas=10, alfa=1.0, beta
     mejor, mejor_costo = None, n + 1
     evals = iters = sin_mejora = 0
     historial = []
-    while evals < max_evals and mejor_costo > 0 and time.perf_counter() - inicio_t < tiempo_max:
+    while mejor_costo > 0 and (evals == 0 or (evals < max_evals
+                                              and time.perf_counter() - inicio_t < tiempo_max)):
         iters += 1
         mejor_iter, costo_iter = None, n + 1
         for _ in range(min(hormigas, max_evals - evals)):

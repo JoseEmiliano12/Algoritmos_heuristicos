@@ -1,7 +1,9 @@
-"""Comprobaciones comunes. Ejecutar desde la raíz: python -m pruebas.probar_algoritmo sa."""
+"""Comprobaciones comunes. Ejecutar desde la raíz: python -m pruebas.probar_algoritmo sa.
+
+``python -m pruebas.probar_algoritmo todos`` revisa todos los algoritmos del registro.
+"""
 
 import argparse
-import importlib
 
 from src.fitness import costo, es_ciclo_hamiltoniano
 from pruebas.grafos_prueba import ciclo5, grafo_con_ciclo
@@ -43,8 +45,13 @@ def probar_algoritmo(resolver, max_evals=20_000, **params):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("algoritmo", choices=["sa", "aco"], nargs="?", default="sa")
+    from src.algoritmos import ALGORITMOS, obtener
+
+    parser.add_argument("algoritmo", choices=[*ALGORITMOS, "todos"], nargs="?", default="sa")
     parser.add_argument("--max-evals", type=int, default=20_000)
     args = parser.parse_args()
-    modulo = importlib.import_module(f"src.algoritmos.{args.algoritmo}")
-    probar_algoritmo(modulo.resolver, max_evals=args.max_evals)
+    nombres = list(ALGORITMOS) if args.algoritmo == "todos" else [args.algoritmo]
+    for nombre in nombres:
+        print(f"== {nombre}")
+        resolver, params = obtener(nombre)
+        probar_algoritmo(resolver, max_evals=args.max_evals, **params)

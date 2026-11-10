@@ -76,6 +76,28 @@ def ruta_aleatoria(n, rng):
     return ruta
 
 
+def ruta_anclada(n, rng):
+    """Permutación aleatoria rotada para que empiece en el vértice 0 (mismo ciclo)."""
+    ruta = ruta_aleatoria(n, rng)
+    inicio = ruta.index(0)
+    return ruta[inicio:] + ruta[:inicio]
+
+
+def es_permutacion(ruta, n):
+    """True si ``ruta`` contiene cada vértice 0..n-1 exactamente una vez."""
+    return len(ruta) == n and set(ruta) == set(range(n))
+
+
+def validar_parametros(n, max_evals, tiempo_max):
+    """Validación común del contrato ``resolver``; lanza ``ValueError`` si algo no cuadra."""
+    if n < 3:
+        raise ValueError("El grafo debe tener al menos tres vértices.")
+    if not isinstance(max_evals, int) or isinstance(max_evals, bool) or max_evals < 1:
+        raise ValueError("max_evals debe ser un entero positivo.")
+    if not tiempo_max > 0:
+        raise ValueError("tiempo_max debe ser positivo.")
+
+
 if __name__ == "__main__":
     import random
 

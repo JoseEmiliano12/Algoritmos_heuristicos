@@ -1,7 +1,6 @@
 """Pruebas de los módulos asignados al integrante 3.
 
-Ejecutar desde la raíz: python3 -m unittest discover \
-    -s integrante_3_heuristicas_y_abejas -p 'test_*.py'
+Ejecutar desde la raíz: python3 -m unittest discover -s pruebas -t .
 """
 
 import random
@@ -87,7 +86,7 @@ class ContratoTest(unittest.TestCase):
 
     def test_abc_operadores_alternativos(self):
         adj = grafo_camino(8)
-        for operador in ("swap", "inversion", "mixto"):
+        for operador in ("swap", "inversion", "mixto", "guiado"):
             resultado = resolver_abc(adj, 31, 4, fuentes=4, operador=operador)
             self.comprobar(resultado, adj, 31)
 

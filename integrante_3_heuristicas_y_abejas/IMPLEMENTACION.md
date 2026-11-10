@@ -40,7 +40,15 @@ mejorar todas las fuentes; las observadoras eligen una fuente con pesos
 `limite` intentos sin mejora. Un empate cuenta como intento fallido. El mejor
 resultado histórico permanece aunque se abandone su fuente.
 
-Parámetros: `fuentes=20`, `limite=100`, `operador="swap"`. El operador `swap`
+> **Actualización (integración Fase 3).** Con los valores originales ABC quedaba casi en
+> búsqueda aleatoria (costo ≈ 95 de 150 en grafos plantados). Se cambió: empates aceptados
+> (`<=`, cuentan como fallo), la mejor fuente actual nunca se abandona, observadoras con peso
+> `exp(costo_min − costo)`, `limite=None` (= 2·n) y operador `guiado` por defecto
+> (2-opt que repara una conexión rota usando una arista real; ver `src/operadores.py`).
+> Lo de abajo describe la versión original, que sigue disponible con
+> `operador="swap", limite=100`.
+
+Parámetros originales: `fuentes=20`, `limite=100`, `operador="swap"`. El operador `swap`
 coincide con la adaptación del PDF de investigación. También se puede elegir
 `inversion` o `mixto` como variantes para calibración posterior. El costo de
 cada vecina se obtiene mediante `delta_swap` o `delta_inversion`, pero cuenta
@@ -53,7 +61,7 @@ también consume evaluaciones.
 Desde la raíz del proyecto:
 
 ```bash
-python3 -m unittest discover -s integrante_3_heuristicas_y_abejas -p 'test_*.py' -v
+python3 -m unittest discover -s pruebas -t . -v   # el test se movió a pruebas/test_ga_abc.py
 ```
 
 Las pruebas comprueban permutaciones, deltas frente a `costo`, presupuesto,

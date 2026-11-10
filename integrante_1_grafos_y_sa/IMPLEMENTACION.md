@@ -69,7 +69,7 @@ es implícito y se incluye en el costo. En el ejemplo se repite solo al mostrarl
 | Parámetro | Valor predeterminado | Interpretación |
 |---|---|---|
 | `T0` | `-1/log(0.8)`, aproximadamente 4.4814 | Acepta un aumento de costo de 1 con probabilidad 0.8 al inicio. No implica aceptar el 80 % de todos los aumentos. |
-| `alfa` | `0.9999` | Multiplica la temperatura después de cada propuesta. |
+| `alfa` | `None` (antes `0.9999`) | Multiplica la temperatura después de cada propuesta. Con `None` se calcula `(T_min/T0)^(1/max_evals)` para usar todo el presupuesto; con `0.9999` SA paraba por temperatura a las ~153 000 evaluaciones. |
 | `T_min` | `0.000001` | Umbral de temperatura para terminar. |
 | `vecino` | `mixto` | Intercambio o inversión con igual probabilidad. |
 | `tiempo_max` | `60` segundos | Límite de tiempo comprobado entre propuestas. |
