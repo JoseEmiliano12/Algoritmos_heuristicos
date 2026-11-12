@@ -1,7 +1,7 @@
 # Reporte técnico y comparativo
 
-Documento principal: `main.tex` (el PDF ya generado es `main.pdf`). La plantilla de la Fase 1
-(`Plantilla d trabajo/`) no se modificó.
+Documento principal: `main.tex` (el PDF ya generado es `main.pdf`). La investigación
+previa de la Fase 1 está en `../Investigacion_previa.pdf`.
 
 | Archivo | Sección |
 |---|---|
