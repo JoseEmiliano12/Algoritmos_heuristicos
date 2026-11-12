@@ -1,0 +1,77 @@
+\chapter{El grafo y el ciclo hamiltoniano}
+\label{cap:grafo}
+
+\section{Definiciones básicas}
+Un \textbf{grafo} $G=(V,E)$ es un conjunto de vértices $V=\{1,\dots,n\}$ unidos por aristas $E$.
+En este proyecto los grafos son \emph{no dirigidos} (la arista $\{u,v\}$ sirve en los dos
+sentidos) y \emph{simples} (sin lazos ni aristas repetidas). El \textbf{grado} de un vértice es el
+número de aristas que llegan a él.
+
+Un \textbf{camino} es una secuencia de vértices en la que cada par consecutivo está unido por una
+arista. Un \textbf{ciclo} es un camino que termina donde empezó. Un \textbf{ciclo hamiltoniano}
+es un ciclo que pasa por \emph{todos} los vértices exactamente una vez. Dicho de otra forma, es
+una lista $(v_1,v_2,\dots,v_n)$ con estas dos condiciones:
+\begin{enumerate}
+  \item Contiene cada vértice del grafo una sola vez, es decir, es una \emph{permutación} de $V$.
+  \item Cada vértice está conectado con el siguiente, y el último con el primero:
+        $\{v_i,v_{i+1}\}\in E$ para $i=1,\dots,n-1$, y además $\{v_n,v_1\}\in E$.
+\end{enumerate}
+Por eso un ciclo hamiltoniano en un grafo de $n$ vértices usa exactamente $n$ aristas: las $n-1$
+del camino más la arista que lo cierra.
+
+\section{Por qué es un problema difícil}
+Decidir si un grafo tiene ciclo hamiltoniano es uno de los problemas NP-completos clásicos de
+Karp \cite{de1}. En la práctica, esto significa que no conocemos un algoritmo rápido para
+todos los casos. Además, el número de rutas posibles crece como $(n-1)!/2$: con 20 vértices ya son
+más de $6\times10^{16}$, así que revisarlas una por una no es opción.
+
+Es importante distinguir dos cosas. Si un algoritmo heurístico \emph{encuentra} un ciclo, podemos
+comprobarlo fácilmente y la respuesta es segura. Pero si \emph{no} lo encuentra, eso no prueba
+que el grafo no tenga ciclo: solo significa que se acabó el tiempo. Por eso, en este reporte,
+una corrida sin éxito la llamamos \emph{inconclusa}.
+
+El problema está muy relacionado con el TSP \cite{sa3}: si a las aristas del grafo les damos peso
+0 y a las que faltan peso 1, un recorrido del TSP con costo 0 es justamente un ciclo hamiltoniano.
+Esta idea es la que usamos para calificar las rutas (sección~\ref{cap:repr}).
+
+\section{Ejemplo}
+Tomemos un grafo con 5 vértices y las aristas
+$\{1,2\},\{2,3\},\{3,4\},\{4,5\},\{5,1\},\{1,3\}$.
+
+\begin{itemize}
+  \item La ruta $(1,2,3,4,5)$ \textbf{sí} es un ciclo hamiltoniano: $1\!-\!2$, $2\!-\!3$,
+        $3\!-\!4$ y $4\!-\!5$ existen, y la arista de cierre $5\!-\!1$ también.
+  \item La ruta $(1,3,2,4,5)$ \textbf{no} lo es, aunque visita todos los vértices: no existe la
+        arista $2\!-\!4$.
+\end{itemize}
+
+\section{Cómo guardamos el grafo en el programa}
+Los grafos del FHCP vienen en el formato HCP, que es parte del estándar TSPLIB. El archivo
+indica el número de vértices (\texttt{DIMENSION}) y luego la lista de aristas
+(\texttt{EDGE\_DATA\_SECTION}):
+
+\begin{verbatim}
+NAME : graph4.hcp
+COMMENT : FHCP Challenge Set. http://fhcp.edu.au/fhcpcs
+TYPE : HCP
+DIMENSION : 84
+EDGE_DATA_FORMAT : EDGE_LIST
+EDGE_DATA_SECTION
+1 43
+1 46
+1 58
+...
+76 77
+-1
+EOF
+\end{verbatim}
+
+El archivo \texttt{src/grafo.py} lee ese formato y guarda el grafo como una \emph{lista de
+adyacencia}: para cada vértice, un conjunto con sus vecinos. Así, saber si dos vértices están
+conectados es una consulta inmediata. Internamente numeramos los vértices de $0$ a $n-1$ y los
+pasamos de vuelta a $1..n$ al mostrar o guardar los resultados.
+
+Cuando un algoritmo encuentra un ciclo, lo guardamos en formato TOUR, que es el mismo formato en
+que el FHCP publica sus soluciones oficiales (\texttt{TOUR\_SECTION} seguida de la lista de
+vértices y un $-1$ al final). Esto nos permitió comparar directamente nuestras soluciones con las
+oficiales.

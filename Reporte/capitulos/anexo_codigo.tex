@@ -1,0 +1,51 @@
+\chapter{Código fuente y cómo ejecutarlo}
+\label{anx:codigo}
+
+El código está en el repositorio del equipo. Necesita Python 3.10 o superior. Los algoritmos y
+los experimentos solo usan la biblioteca estándar; para las gráficas se necesitan
+\texttt{matplotlib} y \texttt{numpy}, que vienen en \texttt{requirements.txt}.
+
+\section{Resolver un grafo}
+\begin{verbatim}
+python -m src datos/fhcp/graph4.hcp --alg abc --semilla 0
+python -m src datos/fhcp/graph4.hcp --alg aco_posa --tour g4.tour
+python -m src --listar        # muestra los algoritmos disponibles
+\end{verbatim}
+El programa carga el grafo, ejecuta la metaheurística y muestra el arreglo de vértices de la
+ruta (numerados de 1 a $n$). Si termina con código 0, encontró un ciclo y lo verificó; si termina
+con 1, la corrida quedó inconclusa.
+
+\section{Repetir los experimentos y este reporte}
+\begin{verbatim}
+python -m venv .venv
+source .venv/bin/activate          # en fish: source .venv/bin/activate.fish
+pip install -r requirements.txt
+bash datos/descargar_fhcp.sh       # descarga los 1001 grafos (para B y C)
+python pruebas/verificar_resultados.py   # comprueba las 2112 corridas
+python -m src.experimentos A --procesos 16     # igual para B y C
+python -m src.graficas resultados/disenoA.jsonl
+python Reporte/actualizar.py       # pasa tablas y figuras al reporte
+cd Reporte && latexmk -pdf main.tex
+\end{verbatim}
+Si un experimento se interrumpe, basta con volver a lanzar el mismo comando: continúa donde se
+quedó.
+
+\section{Archivos principales}
+\begin{table}[H]
+\centering\small\filas
+\begin{tabularx}{\textwidth}{lL}
+\toprule
+Archivo & Qué contiene \\
+\midrule
+\texttt{src/grafo.py} & Lectura de grafos HCP y lectura y escritura de rutas TOUR \\
+\texttt{src/fitness.py} & Función de costo, cálculo rápido de cambios y verificación del ciclo \\
+\texttt{src/representacion.py} & Conversión de \emph{random keys} a ruta (para DE y PSO) \\
+\texttt{src/operadores.py} & Inversión guiada por el grafo \\
+\texttt{src/algoritmos/} & GA, SA, ACO, ABC, DE y PSO \\
+\texttt{src/experimentos.py} & Ejecución de los experimentos A, B y C en paralelo \\
+\texttt{src/graficas.py} & Tablas y gráficas a partir de los resultados \\
+\texttt{pruebas/} & Pruebas automáticas de cada parte \\
+\texttt{Reporte/} & Este documento \\
+\bottomrule
+\end{tabularx}
+\end{table}

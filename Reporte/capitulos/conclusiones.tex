@@ -1,0 +1,60 @@
+\chapter{Conclusiones}
+\label{cap:concl}
+
+\section{¿Qué metaheurística funcionó mejor?}
+La que mejor se adaptó a los grafos difíciles del FHCP fue la \textbf{colonia artificial de abejas
+(ABC)}. Tuvo la tasa de éxito más alta en el experimento A (empatada con \alg{ACO + Pósa}),
+en el benchmarking resolvió más del doble de grafos que \alg{ACO + Pósa}
+(\resueltasBABC{} de \grafosB{}, contra \resueltasBACOposa) y fue la que quedó más cerca de la solución en los grafos grandes,
+con menos del 1\,\% de aristas faltantes incluso con 9\,528 vértices.
+
+La \textbf{colonia de hormigas con rotaciones de Pósa} fue igual de buena en los grafos pequeños,
+y a veces más rápida, pero no escaló: a partir de unos 200 vértices dejó de resolver grafos.
+
+\section{Lo que aprendimos}
+\begin{enumerate}
+  \item \textbf{La representación y los movimientos importan más que el algoritmo.} Los tres
+        algoritmos con éxito usan información del grafo para moverse: ABC repara conexiones con
+        aristas reales, ACO camina solo por aristas que existen y usa rotaciones, y SA (mixto)
+        invierte tramos. Los que se mueven a ciegas (GA, SA con intercambios) o sobre números
+        reales (DE y PSO) no encontraron ningún ciclo.
+  \item \textbf{Un cambio pequeño puede hacer una gran diferencia.} SA solo con intercambios no
+        resolvió nada, pero con la mitad de los movimientos cambiados a inversiones logró
+        \exitosASA{} éxitos con el mismo presupuesto. Lo mismo pasó con ACO: sin rotaciones, 0
+        éxitos; con rotaciones, \exitosAACOposa.
+  \item \textbf{Las random keys no funcionan bien para este problema.} Garantizan rutas válidas,
+        pero un cambio pequeño en las claves puede reordenar media ruta, así que DE y PSO casi no
+        pueden mejorar poco a poco. En los grafos grandes quedaron prácticamente igual que una
+        ruta al azar.
+  \item \textbf{Los grafos cúbicos son el gran cuello de botella.} Casi ninguno se resolvió
+        (solo 1 de los 42 grafos cúbicos que hay entre los primeros 100). Con solo tres vecinos por vértice, cualquier error
+        deja vértices sin salida.
+  \item \textbf{No encontrar el ciclo no significa que no exista.} Todos los grafos del FHCP
+        tienen ciclo hamiltoniano, así que cada corrida sin éxito es un límite de nuestros
+        algoritmos, no del grafo.
+\end{enumerate}
+
+\section{Limitaciones}
+\begin{itemize}
+  \item La comparación fue a igual tiempo y no a igual número de evaluaciones
+        (tabla~\ref{tab:presupuesto}), así que algunos algoritmos usaron muchas más evaluaciones
+        que otros.
+  \item Las rotaciones de Pósa no se cuentan como evaluaciones, lo que hace que \alg{ACO + Pósa}
+        parezca más barato de lo que es.
+  \item Usamos los parámetros iniciales de cada algoritmo, sin una calibración sistemática sobre el
+        FHCP. Es posible que GA, DE o PSO mejoren con otros valores.
+  \item En el experimento B usamos 2 semillas por grafo y en el C solo una, así que esos resultados
+        son menos seguros que los del experimento A.
+  \item El código está en Python puro, así que los tiempos no se pueden comparar directamente con
+        los de herramientas escritas en C o C++.
+\end{itemize}
+
+\section{Trabajo futuro}
+\begin{itemize}
+  \item Calibrar los parámetros de cada algoritmo con algunos grafos reservados para eso.
+  \item Agregar a DE y PSO un paso de búsqueda local con la inversión guiada, para ver si así
+        logran competir.
+  \item Dar más tiempo a los grafos que no se resolvieron, en especial a los cúbicos.
+  \item Combinar lo mejor de ABC y de ACO + Pósa: construir rutas con hormigas y luego mejorarlas
+        con abejas.
+\end{itemize}

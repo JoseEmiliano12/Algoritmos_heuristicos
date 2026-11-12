@@ -1,0 +1,48 @@
+\chapter{Introducción}
+\label{cap:intro}
+
+Un ciclo hamiltoniano es un recorrido que pasa por todos los vértices de un grafo una sola vez y
+regresa al punto de partida. Saber si un grafo tiene uno parece sencillo, pero es un problema
+NP-completo \cite{de1}: no se conoce ningún método que lo resuelva rápido en todos los casos, y
+probar todas las rutas posibles deja de ser viable en cuanto el grafo crece un poco (con 100
+vértices ya hay más rutas que átomos en el universo). Además, es la base del famoso problema del
+agente viajero (TSP) \cite{sa3}.
+
+Por eso en esta práctica usamos \emph{metaheurísticas}: algoritmos que no garantizan encontrar la
+respuesta, pero que van mejorando rutas poco a poco hasta acercarse a una solución. Implementamos
+seis:
+
+\begin{itemize}
+  \item \textbf{Algoritmo genético (GA)}, que usamos como punto de comparación.
+  \item \textbf{Recocido simulado (SA)}.
+  \item \textbf{Colonia de hormigas (ACO)}.
+  \item \textbf{Colonia artificial de abejas (ABC)}.
+  \item \textbf{Evolución diferencial (DE)}.
+  \item \textbf{Enjambre de partículas (PSO)}.
+\end{itemize}
+
+Para probarlos usamos el \textbf{FHCP Challenge Set}, un conjunto de 1\,001 grafos publicado por
+el Flinders Hamiltonian Cycle Project \cite{aco8,aco9}. Todos tienen ciclo hamiltoniano, pero
+están diseñados a propósito para engañar a las heurísticas sencillas, así que son una buena prueba
+para nuestros algoritmos.
+
+Todos los algoritmos comparten el mismo lector de grafos, la misma forma de medir qué tan buena es
+una ruta y el mismo verificador final. Así, si un algoritmo funciona mejor que otro, es por la
+forma en que busca y no por diferencias en el resto del código.
+
+Hicimos tres experimentos: una comparación principal entre los seis algoritmos (\ejecA{}
+corridas), un benchmarking sobre los primeros \grafosB{} grafos del FHCP (\ejecB{} corridas) y una
+prueba con grafos grandes, de hasta 9\,528 vértices.
+
+En resumen, los dos algoritmos que mejor funcionaron fueron \alg{ABC} y \alg{ACO} con rotaciones
+de Pósa, porque aprovechan la estructura del grafo al buscar. DE y PSO, que trabajan con números
+reales en lugar de rutas, no encontraron ningún ciclo. También vimos que los grafos donde todos
+los vértices tienen exactamente tres vecinos fueron casi imposibles para todos los algoritmos.
+
+\section*{Cómo está organizado el reporte}
+En la sección~\ref{cap:grafo} explicamos qué es un ciclo hamiltoniano y cómo guardamos el grafo.
+En la~\ref{cap:repr} vemos cómo representamos las rutas y cómo las calificamos. La~\ref{cap:alg}
+describe cada algoritmo. La~\ref{cap:diseno} cuenta cómo hicimos los experimentos y cómo
+comprobamos que los resultados fueran correctos. Las secciones~\ref{cap:comp}
+y~\ref{cap:bench} muestran los resultados, y la~\ref{cap:concl} cierra con las conclusiones. Al
+final, el anexo~\ref{anx:codigo} explica cómo ejecutar el código.

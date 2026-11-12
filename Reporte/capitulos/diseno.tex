@@ -1,0 +1,107 @@
+\chapter{Cómo hicimos los experimentos}
+\label{cap:diseno}
+
+\section{Instancias y experimentos}
+Usamos grafos del FHCP Challenge Set. Son 1\,001 grafos, de 66 a 9\,528 vértices, y todos tienen
+ciclo hamiltoniano \cite{aco9}. Esto es muy útil: como sabemos que la respuesta siempre es ``sí'',
+podemos medir directamente qué tan seguido la encuentra cada algoritmo.
+
+Hicimos tres experimentos (tabla~\ref{tab:disenos}). Una \emph{corrida} es la ejecución de un
+algoritmo sobre un grafo con una semilla.
+
+\begin{table}[H]
+\centering\small\filas
+\caption{Experimentos realizados.}
+\label{tab:disenos}
+\begin{tabularx}{\textwidth}{@{}lLLccL@{}}
+\toprule
+ & Objetivo & Grafos & Algoritmos & Semillas & Límite por corrida \\
+\midrule
+A & Comparar los seis algoritmos & graph4 a graph24 ($n=84$--$198$) & 8 & \semillasA & \tiempoA\,s o \evalsA{} evaluaciones \\
+B & Benchmarking con el FHCP & graph1 a graph100 ($n=66$--$558$) & 2 & \semillasB & \tiempoB\,s o \evalsB{} evaluaciones \\
+C & Probar grafos grandes & graph50, 200, 500 y 1001 ($n=348$--$9\,528$) & 8 & \semillasC & \tiempoC\,s o \evalsC{} evaluaciones \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Contamos 8 algoritmos porque SA y ACO tienen dos versiones cada uno. En el experimento B solo
+corrimos \alg{ACO + Pósa} y \alg{ABC}, que fueron los que mejor salieron en A. Así pudimos cubrir
+100 grafos con un tiempo de cómputo razonable.
+
+\section{Presupuesto de cada corrida}
+Cada corrida termina en cuanto pasa una de estas tres cosas: encuentra un ciclo, se le acaban las
+evaluaciones o se le acaba el tiempo. Al revisar los resultados nos dimos cuenta de que no todos
+los algoritmos se detuvieron por la misma razón (tabla~\ref{tab:presupuesto}). SA usó sus \evalsA{}
+evaluaciones en unos 35 a 40 segundos, porque cada paso es muy barato. En cambio, GA, ACO, DE y
+PSO hacen más trabajo por evaluación y llegaron al límite de 60 segundos habiendo usado solo entre
+400 mil y 1.2 millones de evaluaciones.
+
+Por eso, la comparación del experimento A es \emph{a igual tiempo}, no a igual número de
+evaluaciones. Nos parece la comparación más práctica, porque al final lo que importa es cuánto hay
+que esperar, pero hay que tenerlo en cuenta al leer los resultados.
+
+\begin{table}[H]
+\centering\small\filas
+\caption{Experimento A: evaluaciones usadas y por qué se detuvieron las corridas sin éxito.}
+\label{tab:presupuesto}
+\resizebox{\textwidth}{!}{\input{tablas/presupuesto_A}}
+\end{table}
+
+\paragraph{Equipo.} Una laptop con procesador \cpu{} (\hilos{} hilos), \sistema{} y Python
+\versionpython{}. Para terminar en un tiempo razonable, corrimos varias corridas al mismo tiempo
+(20 en el experimento A y 16 en el C). Este procesador combina núcleos rápidos y núcleos de
+eficiencia, así que una corrida que cae en un núcleo lento alcanza a hacer menos evaluaciones en
+el mismo tiempo. Esto mete algo de variación en los resultados, pero no afecta que sean correctos.
+
+\section{Qué medimos}
+\begin{itemize}
+  \item \textbf{Tasa de éxito:} el porcentaje de corridas que encontraron un ciclo hamiltoniano.
+        Como solo tenemos 10 semillas por grafo, la acompañamos de un intervalo de confianza del
+        95\,\% (método de Wilson \cite{wilson1927}), que indica qué tanto podría variar ese
+        porcentaje.
+  \item \textbf{Grafos resueltos:} en cuántos grafos distintos hubo al menos una corrida exitosa.
+  \item \textbf{Tiempo y evaluaciones} que tardó en encontrar el ciclo.
+  \item \textbf{Aristas faltantes al final:} cuando no hay éxito, qué tan cerca se quedó.
+  \item \textbf{Precisión, recall y F1.} El enunciado pide estas métricas, así que las adaptamos a
+        nuestro caso. Un ``positivo'' es que el algoritmo diga que encontró un ciclo.
+        \begin{itemize}
+          \item La \emph{precisión} es 1 si hubo detecciones, porque todos los ciclos
+                reportados se verifican. Sin detecciones es $0/0$ (indefinida); para
+                calcular F1 usamos 0 por convención.
+          \item El \emph{recall} coincide con la tasa de éxito: todos los grafos FHCP
+                tienen ciclo.
+          \item El \emph{F1} depende solo del recall y vale 0 sin detecciones.
+        \end{itemize}
+        Por esto, en nuestro caso la métrica que realmente distingue a los algoritmos es la tasa
+        de éxito.
+\end{itemize}
+
+\section{Cómo comprobamos que los resultados son correctos}
+\label{sec:verificacion}
+Comprobamos las rutas con \texttt{pruebas/verificar\_resultados.py}, un programa independiente
+que lee los grafos y recalcula los costos. Para revisar las 2\,112 corridas se necesita el
+conjunto completo de grafos; con los 24 incluidos se comprueban 1\,776 corridas usando
+\texttt{--allow-missing}. La tabla~\ref{tab:verificacion} resume las comprobaciones. Las
+corridas inconclusas devolvieron rutas válidas con aristas faltantes.
+
+\begin{table}[H]
+\centering\small\filas
+\caption{Comprobaciones sobre las \the\numexpr\ejecA+\ejecB+\ejecC\relax{} corridas.}
+\label{tab:verificacion}
+\begin{tabularx}{\textwidth}{Lr}
+\toprule
+Comprobación & Resultado \\
+\midrule
+Están todas las corridas y ninguna repetida (A, B, C) & \ejecA, \ejecB, \ejecC \\
+Cada ruta es una permutación válida de los vértices & todas \\
+El costo guardado coincide con el que recalculamos & todas \\
+Las corridas marcadas como éxito tienen costo 0, y solo esas & todas \\
+Cada ciclo encontrado tiene su archivo \texttt{.tour} y es válido & \the\numexpr\exitosA+\exitosB+\exitosC\relax{} de \the\numexpr\exitosA+\exitosB+\exitosC\relax \\
+Ninguna corrida superó su límite de evaluaciones & todas \\
+Mayor exceso sobre el límite nominal de tiempo & 1.13\,s \\
+Las curvas de convergencia nunca empeoran y terminan en el costo final & todas \\
+Prueba del verificador: acepta las soluciones oficiales del FHCP & 24 de 24 \\
+Al repetir corridas exitosas con la misma semilla sale la misma ruta & sí \\
+\bottomrule
+\end{tabularx}
+\end{table}
