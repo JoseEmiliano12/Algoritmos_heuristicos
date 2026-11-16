@@ -65,11 +65,12 @@ el mismo tiempo. Esto mete algo de variación en los resultados, pero no afecta 
   \item \textbf{Precisión, recall y F1.} El enunciado pide estas métricas, así que las adaptamos a
         nuestro caso. Un ``positivo'' es que el algoritmo diga que encontró un ciclo.
         \begin{itemize}
-          \item La \emph{precisión} (de los ciclos que reporta, cuántos son reales) siempre es 1,
-                porque cada ciclo se verifica antes de reportarlo y no puede haber falsos positivos.
-          \item El \emph{recall} (de los grafos que sí tienen ciclo, en cuántos lo encontró) es
-                igual a la tasa de éxito, porque todos los grafos del FHCP tienen ciclo.
-          \item El \emph{F1} combina las dos y aquí depende solo del recall.
+          \item La \emph{precisión} es 1 si hubo detecciones, porque todos los ciclos
+                reportados se verifican. Sin detecciones es $0/0$ (indefinida); para
+                calcular F1 usamos 0 por convención.
+          \item El \emph{recall} coincide con la tasa de éxito: todos los grafos FHCP
+                tienen ciclo.
+          \item El \emph{F1} depende solo del recall y vale 0 sin detecciones.
         \end{itemize}
         Por esto, en nuestro caso la métrica que realmente distingue a los algoritmos es la tasa
         de éxito.
@@ -77,12 +78,11 @@ el mismo tiempo. Esto mete algo de variación en los resultados, pero no afecta 
 
 \section{Cómo comprobamos que los resultados son correctos}
 \label{sec:verificacion}
-No quisimos confiar solo en lo que reporta cada algoritmo. Al terminar, revisamos todos los
-resultados con un programa de verificación aparte, que no usa nada del código del proyecto: lee
-los archivos de los grafos por su cuenta y vuelve a calcular todo a partir de las rutas guardadas.
-La tabla~\ref{tab:verificacion} muestra lo que revisamos. Todo salió correcto. Las corridas que
-no encontraron ciclo no son errores del programa: terminaron normalmente al acabarse su
-presupuesto y devolvieron una ruta válida, solo que con aristas faltantes.
+Comprobamos las rutas con \texttt{pruebas/verificar\_resultados.py}, un programa independiente
+que lee los grafos y recalcula los costos. Para revisar las 2\,112 corridas se necesita el
+conjunto completo de grafos; con los 24 incluidos se comprueban 1\,776 corridas usando
+\texttt{--allow-missing}. La tabla~\ref{tab:verificacion} resume las comprobaciones. Las
+corridas inconclusas devolvieron rutas válidas con aristas faltantes.
 
 \begin{table}[H]
 \centering\small\filas
@@ -97,7 +97,8 @@ Cada ruta es una permutación válida de los vértices & todas \\
 El costo guardado coincide con el que recalculamos & todas \\
 Las corridas marcadas como éxito tienen costo 0, y solo esas & todas \\
 Cada ciclo encontrado tiene su archivo \texttt{.tour} y es válido & \the\numexpr\exitosA+\exitosB+\exitosC\relax{} de \the\numexpr\exitosA+\exitosB+\exitosC\relax \\
-Ninguna corrida se pasó de su límite de evaluaciones o de tiempo & todas \\
+Ninguna corrida superó su límite de evaluaciones & todas \\
+Mayor exceso sobre el límite nominal de tiempo & 1.13\,s \\
 Las curvas de convergencia nunca empeoran y terminan en el costo final & todas \\
 Prueba del verificador: acepta las soluciones oficiales del FHCP & 24 de 24 \\
 Al repetir corridas exitosas con la misma semilla sale la misma ruta & sí \\

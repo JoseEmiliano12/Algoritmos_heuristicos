@@ -21,6 +21,7 @@ python -m venv .venv
 source .venv/bin/activate          # en fish: source .venv/bin/activate.fish
 pip install -r requirements.txt
 bash datos/descargar_fhcp.sh       # descarga los 1001 grafos (para B y C)
+python pruebas/verificar_resultados.py   # comprueba las 2112 corridas
 python -m src.experimentos A --procesos 16     # igual para B y C
 python -m src.graficas resultados/disenoA.jsonl
 python Reporte/actualizar.py       # pasa tablas y figuras al reporte
