@@ -54,6 +54,37 @@ python3 -m pruebas.probar_algoritmo todos      # contrato + reproducibilidad de 
 | `abc` | permutación | empleadas/observadoras/exploradoras, 2-opt guiado por el grafo | |
 | `de` | random keys → permutación | DE/rand/1/bin | |
 | `pso` | random keys → permutación | inercia (Shi-Eberhart), reinicio por estancamiento | |
+| `posa_lk` | permutación | rotaciones de Pósa (2-opt) + movimiento LK de profundidad 3, meseta con tabú, ILS | nunca empeora al rotar |
+| `rp` | aristas forzadas | ramificación y poda con propagación, poda por 2-conexidad, reinicios de Luby | exacta sin límite de tiempo |
+| `portafolio` | — | alterna `rp` y `posa_lk` con ventanas de tiempo crecientes | |
+| `lns` | permutación | descomposición: contrae tramos fijos, resuelve ventanas con `rp`/`posa_lk` | `portafolio` si n ≤ 700 |
+
+## Optimización para el FHCP Challenge (solo biblioteca estándar)
+
+Piezas nuevas: `src/reduccion.py` (aristas forzadas por grado 2 y subciclos; nunca descarta un
+ciclo hamiltoniano, comprobado con las 24 soluciones oficiales), `src/algoritmos/posa_lk.py`,
+`rp.py`, `portafolio.py`, `lns.py` y el lanzador `src/challenge.py`.
+
+Resultados de validación (equipo de 12 hilos, una pasada de 30 s por grafo):
+
+| Grafos | Método original (informe, diseño B, 120 s) | `python3 -m src.challenge` |
+|---|---|---|
+| graph1–100 | 20 | **90** |
+| graph101–200 | — | **48** |
+
+Campaña completa en la MSI Sword 16 HX (i7-13700HX, 24 hilos, 16 GB). Por defecto se usan
+`núcleos − 2` = 22 procesos (~24 MB cada uno). Es reanudable (Ctrl+C y volver a lanzar):
+
+```bash
+bash datos/descargar_fhcp.sh                      # una vez
+python3 -m src.challenge                          # pasadas de 30 s, 120 s y 600 s (≈ 6–7 h)
+python3 -m src.challenge --tiempos 30 120         # versión corta (≈ 1,5 h)
+python3 -m src.challenge --resumen                # conteo + verificación de los TOUR en disco
+```
+
+Los ciclos quedan en `resultados/challenge_tours/graphN.tour`. Limitación conocida: en grafos
+grandes construidos con «gadgets» la búsqueda se estanca a pocas aristas del ciclo y más
+tiempo no ayuda (probado hasta 300 s); ahí está la diferencia con los 985/1001 de los ganadores.
 
 Ninguna estructura puede ser ilegal: los operadores de permutación conservan los vértices,
 ACO completa con los no visitados, y las random keys siempre decodifican a una permutación.

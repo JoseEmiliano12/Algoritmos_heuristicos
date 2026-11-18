@@ -2,7 +2,7 @@
 
 Uso (desde la raíz del repositorio)::
 
-    python3 -m src.experimentos A                 # diseño A completo, 10 procesos
+    python3 -m src.experimentos A                 # diseño A completo, núcleos - 2 procesos
     python3 -m src.experimentos A --procesos 6    # menos núcleos
     python3 -m src.experimentos A --dry-run       # solo cuenta cuántas ejecuciones faltan
 
@@ -27,12 +27,13 @@ from src.algoritmos import ALGORITMOS, obtener
 from src.fitness import es_ciclo_hamiltoniano
 from src.grafo import escribir_tour, leer_hcp, num_aristas
 
-TODOS = list(ALGORITMOS)
+# Diseños A y C: los 8 algoritmos originales (los nuevos se evalúan con src.challenge).
+TODOS = ["ga", "sa", "sa_swap", "aco", "aco_posa", "abc", "de", "pso"]
 PUNTOS_CURVA = 100  # puntos de la curva de convergencia que se guardan por ejecución
 
 DISENOS = {
     "A": dict(grafos=[f"datos/fhcp/graph{i}.hcp" for i in range(4, 25)], algoritmos=TODOS,
-              semillas=range(10), tiempo=60, max_evals=6_000_000, salida="resultados/disenoA.jsonl"),
+              semillas=range(45), tiempo=60, max_evals=6_000_000, salida="resultados/disenoA.jsonl"),
     "B": dict(grafos=[f"datos/fhcp_completo/graph{i}.hcp" for i in range(1, 101)],
               algoritmos=["aco_posa", "abc"], semillas=range(2), tiempo=120, max_evals=12_000_000,
               salida="resultados/disenoB.jsonl"),
@@ -92,7 +93,7 @@ def main(argv=None):
     p = argparse.ArgumentParser(prog="python3 -m src.experimentos", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("diseno", choices=sorted(DISENOS))
-    p.add_argument("--procesos", type=int, default=10)
+    p.add_argument("--procesos", type=int, default=max(1, (os.cpu_count() or 2) - 2))
     p.add_argument("--salida", help="archivo .jsonl (por defecto el del diseño)")
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args(argv)
