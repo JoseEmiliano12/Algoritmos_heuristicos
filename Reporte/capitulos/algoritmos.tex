@@ -21,6 +21,7 @@ según el tamaño del grafo o el presupuesto.}
 \end{table}
 
 \section{Algoritmo genético (GA)}
+\index{algoritmo genético}
 \label{sec:ga}
 Es nuestro algoritmo de control. Imita la evolución natural \cite{abc4}: hay una \textbf{población} de 40 rutas y en
 cada generación se crean rutas nuevas combinando las mejores.
@@ -37,6 +38,7 @@ El vértice 0 siempre va al inicio, porque una ruta y su rotación representan e
 evitamos tener soluciones repetidas en la población.
 
 \section{Recocido simulado (SA)}
+\index{recocido simulado}
 \label{sec:sa}
 Se inspira en cómo se enfría un metal \cite{sa4}. Parte de una ruta al azar y en cada paso propone
 un pequeño cambio:
@@ -61,6 +63,7 @@ Probamos dos versiones:
 \end{itemize}
 
 \section{Colonia de hormigas (ACO)}
+\index{colonia de hormigas}
 \label{sec:aco}
 Las hormigas reales dejan feromona en los caminos buenos y las demás tienden a seguirlos
 \cite{aco1,aco3}. En nuestra versión, en cada iteración 10 hormigas construyen una ruta:
@@ -87,6 +90,7 @@ evaluaciones de \alg{ACO + Pósa} sale mucho más bajo que el de los demás, y n
 directamente.
 
 \section{Colonia artificial de abejas (ABC)}
+\index{colonia artificial de abejas}
 \label{sec:abc}
 Se basa en cómo las abejas buscan comida \cite{abc7,abc8}. Cada ``fuente de alimento'' es una ruta, y
 usamos 20. En cada ciclo hay tres tipos de abejas:
@@ -104,6 +108,7 @@ los cambios que \emph{empatan} el costo: en estos grafos casi todos los movimien
 costo igual, y si solo aceptáramos mejoras estrictas, la búsqueda se quedaría congelada.
 
 \section{Evolución diferencial (DE)}
+\index{evolución diferencial}
 \label{sec:de}
 La evolución diferencial \cite{de10} fue creada para problemas con números reales, así que tuvimos que
 adaptarla. Usamos \emph{random keys} \cite{de13} (sección~\ref{cap:repr}): cada solución es un vector de
@@ -121,6 +126,7 @@ En la investigación encontramos otras formas de adaptar DE a permutaciones, com
 una ruta inválida.
 
 \section{Enjambre de partículas (PSO)}
+\index{enjambre de partículas}
 \label{sec:pso}
 Simula un grupo de partículas que se mueven buscando el mejor lugar; cada una recuerda su mejor
 posición y conoce la mejor de todo el enjambre \cite{pso1995}. Igual que en DE, cada partícula es

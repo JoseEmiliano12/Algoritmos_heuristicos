@@ -137,7 +137,10 @@ def resolver(adj, max_evals, semilla, tiempo_max=60, ventana=500, t_sub=2.0, t_i
             if r["costo"] == 0:
                 mejor_sub = r["ruta"]
         if mejor_sub is None:
-            r = posa_lk.resolver(sub, max_evals, sem, tiempo_max=min(t, t_fin - time.perf_counter()),
+            t_lk = min(t, t_fin - time.perf_counter())
+            if t_lk <= 0.01:  # el presupuesto se agotó durante comprimir/rp
+                break
+            r = posa_lk.resolver(sub, max_evals, sem, tiempo_max=t_lk,
                                  ruta_inicial=ruta_sub, forzadas=forz)
             evals += r["evals"]
             mejor_sub = r["ruta"]

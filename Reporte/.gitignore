@@ -1,0 +1,6 @@
+# Archivos generados por el índice analítico.
+*.idx
+*.ilg
+*.ind
+challenge_*.pid
+challenge_*.estado

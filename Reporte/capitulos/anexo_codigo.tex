@@ -30,6 +30,19 @@ cd Reporte && latexmk -pdf main.tex
 Si un experimento se interrumpe, basta con volver a lanzar el mismo comando: continúa donde se
 quedó.
 
+Para evaluar los 1\,001 grafos del FHCP Challenge con 45 semillas por algoritmo y consultar
+los resultados por grafo, desde la raíz del repositorio:
+\begin{verbatim}
+python Reporte/challenge.py --dry-run
+python Reporte/challenge.py --procesos 10
+python Reporte/challenge.py --resumen
+python Reporte/graficas_challenge.py
+\end{verbatim}
+Las corridas se guardan en \texttt{resultados/challenge\_1001\_45.jsonl}. El resumen genera
+dos archivos CSV, uno global y otro con las 1\,001 instancias, además de gráficas.
+Este experimento es independiente
+de los resultados del diseño B presentados en el capítulo~\ref{cap:bench}.
+
 \section{Archivos principales}
 \begin{table}[H]
 \centering\small\filas

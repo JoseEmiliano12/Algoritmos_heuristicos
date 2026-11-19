@@ -39,7 +39,13 @@ def ejecutar(tarea):
     nombre, n, adj = leer_hcp(archivo)
     resolver, params = obtener(alg)
     inicio = time.perf_counter()
-    res = resolver(adj, 10 ** 12, pasada, tiempo_max=tiempo, **params)
+    try:
+        res = resolver(adj, 10 ** 12, pasada, tiempo_max=tiempo, **params)
+    except Exception as e:  # un grafo que falle no debe tumbar la campaña entera
+        return {"grafo": nombre, "num": num, "n": n, "pasada": pasada, "algoritmo": alg,
+                "tiempo_max": tiempo, "exito": False, "costo": -1,
+                "tiempo_s": round(time.perf_counter() - inicio, 2), "evals": 0, "tour": None,
+                "error": f"{type(e).__name__}: {e}"}
     t = time.perf_counter() - inicio
     exito = es_ciclo_hamiltoniano(res["ruta"], adj)
     tour = None
