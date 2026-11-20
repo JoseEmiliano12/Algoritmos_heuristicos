@@ -1,0 +1,22 @@
+campaña,algoritmo,corridas,exitos,grafos_resueltos,mediana_tiempo_exitos_s,mediana_tiempo_todas_s
+A,abc,210,62,7,3.314,60.0
+A,aco,210,0,0,,60.001
+A,aco_posa,210,59,7,1.226,60.002
+A,de,210,0,0,,60.0
+A,ga,210,0,0,,60.0
+A,pso,210,0,0,,60.0
+A,sa,210,17,5,18.738,37.446
+A,sa_swap,210,0,0,,44.689
+B,abc,200,30,19,11.527,120.0
+B,aco_posa,200,14,9,1.088,120.012
+C,abc,4,0,0,,120.0
+C,aco,4,0,0,,120.01
+C,aco_posa,4,0,0,,120.014
+C,de,4,0,0,,120.001
+C,ga,4,0,0,,120.001
+C,pso,4,0,0,,120.003
+C,sa,4,0,0,,78.941
+C,sa_swap,4,0,0,,80.649
+LNS,lns,2656,200,200,0.84,120.0
+45 semillas (parcial),abc,657,41,30,16.028,120.0
+45 semillas (parcial),aco_posa,658,14,9,1.088,120.009

@@ -1,0 +1,4 @@
+algoritmo,ejecuciones,esperadas,exitos,tasa_exito_ejecutadas,grafos_resueltos
+aco_posa,658,45045,14,0.0213,9
+abc,657,45045,41,0.0624,30
+total,1315,90090,55,0.0418,31

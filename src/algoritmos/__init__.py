@@ -20,6 +20,10 @@ ALGORITMOS = {
     "abc": ("abc", {}),
     "de": ("de", {}),
     "pso": ("pso", {}),
+    "posa_lk": ("posa_lk", {}),
+    "rp": ("rp", {}),
+    "portafolio": ("portafolio", {}),
+    "lns": ("lns", {}),
 }
 
 

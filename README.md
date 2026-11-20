@@ -1,37 +1,56 @@
-# Entrega: ciclo hamiltoniano con metaheurísticas
+# Entregable 3 — Ciclo hamiltoniano y FHCP
 
-Esta carpeta reúne los entregables de la práctica de Algoritmos Heurísticos.
+Este directorio contiene el programa, las instancias del FHCP Challenge Set, los registros de ejecución, las rutas encontradas, las tablas y el reporte final. El reporte formal está en **Reporte.pdf**. No se necesita el código fuente de LaTeX para consultar el entregable.
 
-## Archivos principales
+## Contenido
 
-| Ruta | Contenido |
-|---|---|
-| `Investigacion_previa.pdf` | Investigación de grafos, representación, métricas, FHCP y metaheurísticas (fase 1). |
-| `Reporte/main.pdf` | Informe técnico y comparativo final (fase 4). |
-| `src/` | Código ejecutable de GA, SA, ACO, ABC, DE y PSO. |
-| `datos/fhcp/` | 24 grafos FHCP con sus soluciones oficiales para pruebas locales. |
-| `datos/instancias.csv` | Metadatos de las 1 001 instancias FHCP. |
-| `resultados/` | Registros de las 2 112 corridas, gráficas y ciclos encontrados en formato TOUR. |
-| `pruebas/` | Pruebas del código y verificador independiente de resultados. |
-| `Reporte/` | Código fuente LaTeX, tablas y figuras necesarios para reconstruir el informe. |
+- `Reporte.pdf`: fundamentos, método, diseños A/B/C, resultados anteriores, comparación entre equipos, optimización y nuevas pruebas, limitaciones y conclusiones.
+- `src/`: lectura de grafos, función de costo, verificación de ciclos y algoritmos. Incluye GA, SA, ACO, ABC, DE, PSO y los métodos combinados añadidos para el Challenge.
+- `datos/`: ejemplos y el conjunto completo de 1,001 instancias FHCP, con sus archivos de solución oficial.
+- `resultados/`: registros JSONL, rutas TOUR, tablas CSV, figuras y `Resumen_Entregable_3.xlsx`. Se conservan también los archivos de repetición de la Dell G7 para respaldar la comparación del reporte.
+- `pruebas/`: pruebas automáticas y verificadores independientes de los resultados registrados.
+- `scripts/`: generación de resúmenes y gráficas, más el lanzador de la campaña de 45 semillas.
+- `requirements.txt`: dependencias para generar las figuras.
 
-## Ejecutar y verificar
+## Estado de las campañas
 
-Se requiere Python 3.10 o superior. Los algoritmos y las pruebas usan la biblioteca estándar.
-Para regenerar gráficas, instala las dependencias de `requirements.txt`.
+| Campaña | Registro disponible | Resultado |
+|---|---:|---|
+| Diseño A | 1,680/1,680 corridas | Completo |
+| Diseño B | 400/400 corridas | Completo |
+| Diseño C | 32/32 corridas | Completo |
+| Método combinado LNS, 1,001 grafos | 2,656 intentos | 200 grafos con ciclo verificado y archivo TOUR |
+| Extensión ACO + Pósa y ABC, 45 semillas previstas | 1,315/90,090 corridas | Parcial; 55 corridas exitosas y 31 grafos distintos |
+
+Las dos campañas nuevas usan presupuestos y métodos distintos. Sus cifras de éxito no deben sumarse como si fueran una misma ejecución. La extensión de 45 semillas solo tiene registros para las semillas 0 y 1; las demás siguen pendientes. Las duraciones acumuladas de los intentos no representan tiempo total de reloj cuando se usan varios procesos.
+
+## Cómo revisar y ejecutar
+
+Desde esta carpeta:
 
 ```bash
-python3 -m src --listar
-python3 -m src datos/fhcp/graph4.hcp --alg abc --semilla 0
 python3 -m unittest discover -s pruebas -t . -q
-python3 pruebas/verificar_resultados.py --allow-missing
+python3 pruebas/verificar_resultados.py
+python3 pruebas/verificar_challenge.py
+python3 -m src.challenge --resumen
+python3 scripts/challenge.py --resumen
 ```
 
-La última orden valida todos los registros y coteja las rutas de los 24 grafos incluidos.
-Para comprobar también las corridas de grafos mayores y repetir los experimentos B y C,
-descarga el conjunto público completo y ejecuta el verificador sin la opción parcial:
+Para consultar las corridas pendientes antes de continuar:
 
 ```bash
-bash datos/descargar_fhcp.sh
-python3 pruebas/verificar_resultados.py
+python3 -m src.experimentos A --dry-run
+python3 scripts/challenge.py --dry-run
 ```
+
+Ejemplos de ejecución:
+
+```bash
+python3 -m src datos/fhcp_completo/graph4.hcp --alg lns --semilla 0 --tiempo 10
+python3 -m src.challenge --procesos 6
+python3 scripts/challenge.py --procesos 6
+```
+
+Las campañas leen los registros existentes y omiten combinaciones ya ejecutadas. Conviene usar un número de procesos acorde con la memoria disponible. Para regenerar las figuras se instalan primero las dependencias con `python3 -m pip install -r requirements.txt`.
+
+Conjunto oficial: <https://sites.flinders.edu.au/flinders-hamiltonian-cycle-project/fhcp-challenge-set/>.
